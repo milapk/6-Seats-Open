@@ -3,20 +3,79 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import {
     Button,
     TextField,
-    Alert,
     ToggleButton,
     ToggleButtonGroup,
 } from "@mui/material";
+import CustomAlerts from "./CustomAlerts";
 import { useNavigate } from "react-router-dom";
 import "../styles/UserForm.css";
+import api from "../api.js";
 import formImg from "../assets/191.jpg";
 
 export default function UserForm({ type }) {
     const title = type === "LOGIN" ? "Login" : "Register";
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
     const [authMode, setAuthMode] = useState(type);
+    const [alertMessage, setAlertMessage] = useState("");
     const navigate = useNavigate();
+
+    const handleLogin = async () => {
+        try {
+            const response = await api.post("/api/obtain-token/", {
+                username,
+                password,
+            });
+            if (response.status === 200) {
+                localStorage.setItem(ACCESS_TOKEN, response.data.access);
+                localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
+                navigate("/");
+            }
+        } catch (error) {
+            if (error.response && error.response.status === 401) {
+                setAlertMessage(
+                    "Invalid Username or Password, please try again!"
+                );
+            } else {
+                setAlertMessage("An error occurred. Please refresh or try again later.");
+            }
+        }
+        
+    };
+
+    const handleUserFormSumbition = async (e) => {
+        if (password === "" && username === "") {
+            setAlertMessage("Please enter both Username and Password!");
+            return;
+        } else if (username === "") {
+            setAlertMessage("Please enter a Username!");
+            return;
+        } else if (password === "") {
+            setAlertMessage("Please enter a Password!");
+            return;
+        }
+        try {
+            if (type === "LOGIN") {
+                handleLogin();
+            } else if (type === "REGISTER") {
+                const response = await api.post("/api/register/", {
+                    username,
+                    password,
+                });
+                if (response.status === 201) {
+                    handleLogin();
+                }
+            }
+        } catch (error) {
+            if (error.response && error.response.data.username) {
+                setAlertMessage(
+                    "Username is already taken, please enter another one!"
+                );
+            } else {
+                setAlertMessage("An error occurred. Please refresh or try again later.");
+            }
+        }
+    };
 
     const handleToggleChange = (e, newMode) => {
         if (newMode !== null) {
@@ -24,19 +83,33 @@ export default function UserForm({ type }) {
         }
     };
 
+    const handleUsernameChange = (e) => {
+        setUsername(e.target.value);
+    };
+
+    const handlePasswordChange = (e) => {
+        setPassword(e.target.value);
+    };
+
     const goToLogin = (e) => {
-        if (type !== 'LOGIN'){
-            navigate('/login')
+        if (type !== "LOGIN") {
+            navigate("/login");
         }
-    }
+    };
 
     const goToRegister = (e) => {
-        if (type !== 'REGISTER'){
-            navigate('/register')
+        if (type !== "REGISTER") {
+            navigate("/register");
         }
-    }
+    };
     return (
         <div id="user-form-root">
+            <CustomAlerts
+                message={alertMessage}
+                severity="error"
+                duration={3000}
+                onClose={() => setAlertMessage("")}
+            />
             <div id="form-container">
                 <div id="container-left">
                     <img id="img" src={formImg} />
@@ -65,8 +138,13 @@ export default function UserForm({ type }) {
                                 },
                             }}
                         >
-                            <ToggleButton value="LOGIN" onClick={goToLogin}>LOGIN</ToggleButton>
-                            <ToggleButton value="REGISTER" onClick={goToRegister}>
+                            <ToggleButton value="LOGIN" onClick={goToLogin}>
+                                LOGIN
+                            </ToggleButton>
+                            <ToggleButton
+                                value="REGISTER"
+                                onClick={goToRegister}
+                            >
                                 REGISTER
                             </ToggleButton>
                         </ToggleButtonGroup>
@@ -78,6 +156,7 @@ export default function UserForm({ type }) {
                                 size="small"
                                 label="Username"
                                 color="primary"
+                                onChange={handleUsernameChange}
                             ></TextField>
                         </div>
                         <div id="form-textfield">
@@ -86,12 +165,14 @@ export default function UserForm({ type }) {
                                 size="small"
                                 label="Password"
                                 color="primary"
+                                onChange={handlePasswordChange}
                             ></TextField>
                         </div>
                         <Button
                             id="form-sumbit"
                             variant="contained"
                             color="secondary"
+                            onClick={handleUserFormSumbition}
                         >
                             {title}
                         </Button>

@@ -9,20 +9,20 @@ export default function ProtectedRoute({ children }) {
     const [isAuthorized, setIsAuthorized] = useState(null);
 
     useEffect(() => {
-        //auth().catch(() => setIsAuthorized(false));
-        setIsAuthorized(false);
+        auth().catch(() => setIsAuthorized(false));
+        //setIsAuthorized(false);
     }, []);
 
     const refreshToken = async () => {
         const refreshToken = localStorage.getItem(REFRESH_TOKEN);
         const decodedRefresh = jwtDecode(refreshToken);
-        const timeNow = Date.now() / 1000; 
+        const timeNow = Date.now() / 1000;
 
         if (timeNow > decodedRefresh.exp) {
             setIsAuthorized(false);
         } else {
             try {
-                const response = await api.post("/api/token/refresh/", {
+                const response = await api.post("/api/refresh-token/", {
                     refresh: refreshToken,
                 });
                 if (response.status === 200) {
