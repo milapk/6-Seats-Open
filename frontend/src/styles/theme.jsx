@@ -1,4 +1,3 @@
-// theme.js
 import { createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
@@ -26,7 +25,7 @@ const theme = createTheme({
         MuiTextField: {
             variants: [
                 {
-                    props: { size: "xsmall" }, // custom size
+                    props: { size: "xsmall" },
                     style: {
                         "& .MuiInputBase-root": {
                             height: 38,
