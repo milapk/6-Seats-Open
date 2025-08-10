@@ -5,7 +5,13 @@ import {
     TextField,
     ToggleButton,
     ToggleButtonGroup,
+    FormControl,
+    InputLabel,
+    InputAdornment,
+    IconButton,
+    FilledInput,
 } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import CustomAlerts from "./CustomAlerts";
 import { useNavigate } from "react-router-dom";
 import "../styles/UserForm.css";
@@ -16,6 +22,7 @@ export default function UserForm({ type }) {
     const title = type === "LOGIN" ? "Login" : "Register";
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [authMode, setAuthMode] = useState(type);
     const [alertMessage, setAlertMessage] = useState("");
     const navigate = useNavigate();
@@ -37,10 +44,11 @@ export default function UserForm({ type }) {
                     "Invalid Username or Password, please try again!"
                 );
             } else {
-                setAlertMessage("An error occurred. Please refresh or try again later.");
+                setAlertMessage(
+                    "An error occurred. Please refresh or try again later."
+                );
             }
         }
-        
     };
 
     const handleUserFormSumbition = async (e) => {
@@ -72,7 +80,9 @@ export default function UserForm({ type }) {
                     "Username is already taken, please enter another one!"
                 );
             } else {
-                setAlertMessage("An error occurred. Please refresh or try again later.");
+                setAlertMessage(
+                    "An error occurred. Please refresh or try again later."
+                );
             }
         }
     };
@@ -81,6 +91,18 @@ export default function UserForm({ type }) {
         if (newMode !== null) {
             setAuthMode(newMode);
         }
+    };
+
+    const handleShowPassword = () => {
+        setShowPassword((show) => !show);
+    };
+
+    const handleMouseDownPassword = (event) => {
+        event.preventDefault();
+    };
+
+    const handleMouseUpPassword = (event) => {
+        event.preventDefault();
     };
 
     const handleUsernameChange = (e) => {
@@ -157,16 +179,34 @@ export default function UserForm({ type }) {
                                 label="Username"
                                 color="primary"
                                 onChange={handleUsernameChange}
+                                sx={{width:'100%'}}
                             ></TextField>
                         </div>
                         <div id="form-textfield">
-                            <TextField
-                                variant="filled"
-                                size="small"
-                                label="Password"
-                                color="primary"
-                                onChange={handlePasswordChange}
-                            ></TextField>
+                            <FormControl variant="filled" sx={{width:'100%'}}>
+                                <InputLabel htmlFor="filled-adornment-password">
+                                    Password
+                                </InputLabel>
+                                <FilledInput
+                                    id="filled-adornment-password"
+                                    type={showPassword ? "text" : "password"}
+                                    endAdornment={
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                
+                                                onClick={handleShowPassword}
+                                                
+                                            >
+                                                {showPassword ? (
+                                                    <VisibilityOff />
+                                                ) : (
+                                                    <Visibility />
+                                                )}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    }
+                                />
+                            </FormControl>
                         </div>
                         <Button
                             id="form-sumbit"
