@@ -1,9 +1,26 @@
-#root, html, body {
+#root,
+html,
+body {
     margin: 0;
     padding: 0;
     height: 100%;
     width: 100%;
-    background-color: #1e3941; 
-    font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    background-color: black;
+    font-family: "Poppins", sans-serif;
 }
-  
+
+.button {
+    width: 100%;
+    background: linear-gradient(to bottom, #ffcc00, #b38600);
+    border-radius: 6px;
+    color: #000;
+    font-weight: bold;
+    padding: 8px 16px;
+    box-shadow: 0 3px #806600;
+    transition: transform 0.1s;
+}
+
+.button:hover {
+    transform: scale(1.02) perspective(1px);
+    box-shadow: 0 5px #665200;
+}

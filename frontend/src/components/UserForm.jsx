@@ -210,6 +210,7 @@ export default function UserForm({ type }) {
                         </div>
                         <Button
                             id="form-sumbit"
+                            className="button"
                             variant="contained"
                             color="secondary"
                             onClick={handleUserFormSumbition}
