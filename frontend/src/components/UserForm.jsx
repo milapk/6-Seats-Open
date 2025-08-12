@@ -189,6 +189,7 @@ export default function UserForm({ type }) {
                                 </InputLabel>
                                 <FilledInput
                                     id="filled-adornment-password"
+                                    onChange={handlePasswordChange}
                                     type={showPassword ? "text" : "password"}
                                     endAdornment={
                                         <InputAdornment position="end">

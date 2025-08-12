@@ -1,15 +1,27 @@
 import { useState, useEffect } from "react";
 import PersonIcon from "@mui/icons-material/Person";
 import { Button } from "@mui/material";
+import api from "../api.js";
 import "../styles/Home.css";
+import numeral from 'numeral';
+
 export default function Home() {
-    const tableData = [
-        { stakes: "1k/2k", buyIn: 50, tables: "8 Tables", players: 16 },
-        { stakes: "250/500", buyIn: 50, tables: "18 Tables", players: 26 },
-        { stakes: "50/100", buyIn: 50, tables: "34 Tables", players: 71 },
-        { stakes: "5/10", buyIn: 500, tables: "9 Tables", players: 130 },
-        { stakes: "1/2", buyIn: 50, tables: "53 Tables", players: 276 },
-    ];
+    const [tableData, setTableData] = useState([]);
+    const [playerChip, setPlayerChips] = useState(0);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await api.get("/api/get-table-data/");
+                if (response.status === 200) {
+                    setTableData([...response.data.table_data])
+                    setPlayerChips(response.data.chips)
+                }
+            } catch (error) {}
+        };
+        fetchData()
+    }, []);
+
     return (
         <div id="home-root">
             <div id="table-container">
@@ -23,12 +35,12 @@ export default function Home() {
                     <div id="tables-header-column">Action</div>
                 </div>
                 <div id="tables-rows">
-                    {tableData.map((row, index) => (
+                    {tableData.map((table, index) => (
                         <div key={index} className="table-row">
-                            <div>{row.stakes}</div>
-                            <div>{row.buyIn}</div>
-                            <div>{row.tables}</div>
-                            <div>{row.players}</div>
+                            <div>{numeral(table.small_blind).format('0,0')}/{numeral(table.big_blind).format('0,0')}</div>
+                            <div>{numeral(table.buy_in).format('0,0')}</div>
+                            <div>{numeral(table.games).format('0,0')}</div>
+                            <div>{numeral(table.players).format('0,0')}</div>
                             <div>
                                 <Button
                                     variant="contained"
@@ -45,7 +57,7 @@ export default function Home() {
             <div id="sidebar">
                 <div id="sidebar-profile">
                     <PersonIcon></PersonIcon>
-                    <div id="sidebar-chips">Chips: 590</div>
+                    <div id="sidebar-chips">Chips: {playerChip}</div>
                 </div>
                 <div id="sidebar-private">
                     <div>Private tables</div>
