@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 
 stage_choices = [
     (0, 'Pre-flop'),
@@ -9,9 +10,19 @@ stage_choices = [
     (4, 'Showdown')
 ]
 
+
+class CustomUser(AbstractUser):
+    chips = models.PositiveIntegerField(default=1000)
+
+    def __str__(self):
+        return self.username
+
+
 class TableTypeModel(models.Model):
-    stakes = models.CharField()
+    big_blind = models.PositiveIntegerField()
     small_blind = models.PositiveIntegerField()
+    min_buy_in = models.PositiveIntegerField()
+    max_buy_in = models.PositiveIntegerField()
 
 class PotModel(models.Model):
     game = models.ForeignKey('GameModel', on_delete=models.CASCADE)
@@ -21,7 +32,7 @@ class PotModel(models.Model):
 
     def add_chips(self, amount):
         '''Add chips to this pot'''
-        self.pot_money = F('pot_money') + amount
+        self.pot_money = models.F('pot_money') + amount
         self.save(update_fields=['pot_money'])
 
 class GameModel(models.Model):
@@ -33,7 +44,7 @@ class GameModel(models.Model):
 
 
 class PlayerModel(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey('api.CustomUser', on_delete=models.CASCADE)
     game = models.ForeignKey('GameModel', on_delete=models.CASCADE, null=True)
     chips_last_claimed = models.DateTimeField()
     seat_number = models.PositiveIntegerField(null=True)
