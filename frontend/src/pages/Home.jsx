@@ -1,29 +1,53 @@
 import { useState, useEffect } from "react";
 import PersonIcon from "@mui/icons-material/Person";
 import { Button } from "@mui/material";
+import AutoCloseAlert from "../components/CustomAlerts.jsx";
 import api from "../api.js";
 import "../styles/Home.css";
-import numeral from 'numeral';
+import numeral from "numeral";
 
 export default function Home() {
     const [tableData, setTableData] = useState([]);
     const [playerChip, setPlayerChips] = useState(0);
+    const [alertMessage, setAlertMessage] = useState("");
+    const [alertType, setAlertType] = useState('error')
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const response = await api.get("/api/get-table-data/");
                 if (response.status === 200) {
-                    setTableData([...response.data.table_data])
-                    setPlayerChips(response.data.chips)
+                    setTableData([...response.data.table_data]);
+                    setPlayerChips(response.data.chips);
                 }
             } catch (error) {}
         };
-        fetchData()
+        fetchData();
     }, []);
-
+    const handleClaimChips = async () => {
+        try {
+            const response = await api.post("/api/claim-chips/");
+            if (response.status === 200) {
+                setPlayerChips(response.data.chips);
+                setAlertType('success');
+                setAlertMessage('Chips claimed successfully! Get more in an Hour!')
+            }
+        } catch (error) {
+            if (error.response && error.response.status === 406){
+                const time =  Math.floor(error.response.data.cool_down / 60)
+                setAlertType('error');
+                setAlertMessage(`Chips already claimed! Get more in an ${time} minutes!`)
+            }
+        }
+    };
     return (
         <div id="home-root">
+            <AutoCloseAlert
+                message={alertMessage}
+                severity={alertType}
+                duration={3000}
+                onClose={() => setAlertMessage("")}
+            />
             <div id="table-container">
                 <h1 id="table-title">Browse and Join Tables</h1>
 
@@ -37,10 +61,13 @@ export default function Home() {
                 <div id="tables-rows">
                     {tableData.map((table, index) => (
                         <div key={index} className="table-row">
-                            <div>{numeral(table.small_blind).format('0,0')}/{numeral(table.big_blind).format('0,0')}</div>
-                            <div>{numeral(table.buy_in).format('0,0')}</div>
-                            <div>{numeral(table.games).format('0,0')}</div>
-                            <div>{numeral(table.players).format('0,0')}</div>
+                            <div>
+                                {numeral(table.small_blind).format("0,0")}/
+                                {numeral(table.big_blind).format("0,0")}
+                            </div>
+                            <div>{numeral(table.buy_in).format("0,0")}</div>
+                            <div>{numeral(table.games).format("0,0")}</div>
+                            <div>{numeral(table.players).format("0,0")}</div>
                             <div>
                                 <Button
                                     variant="contained"
@@ -86,6 +113,7 @@ export default function Home() {
                         variant="contained"
                         color="secondary"
                         className="button"
+                        onClick={handleClaimChips}
                     >
                         Claim chips
                     </Button>
