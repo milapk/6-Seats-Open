@@ -1,5 +1,4 @@
-from django.contrib.auth.models import User
-from .models import CustomUser, GameModel
+from .models import CustomUser
 from rest_framework import serializers
 
 DEFAULT_CHIPS = 1000
