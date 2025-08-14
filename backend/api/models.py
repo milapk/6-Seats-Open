@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from datetime import timedelta
+import random
 
 stage_choices = [
     (0, 'Pre-flop'),
@@ -77,6 +78,93 @@ class GameModel(models.Model):
     community_cards = models.CharField(max_length=14, blank=True)
     open_seats = models.CharField(default='123456')
 
+    def _seat_add_sub(self, seat, num) -> int:
+        """Performs circular seat arithmetic"""
+        new_seat = seat + num
+        while new_seat > 6: new_seat -= 6
+        while new_seat < 1: new_seat += 6
+        return new_seat
+    
+    def _get_seat_patterns(self, taken_seats):
+            """Identifies seating patterns"""
+            side_by_side = []
+            for seat in taken_seats:
+                if self._seat_add_sub(seat, 1) in taken_seats or self._seat_add_sub(seat, -1) in taken_seats:
+                    side_by_side.append(seat)
+            return len(side_by_side), side_by_side
+
+    def _check_sides(self, seat, taken_seats):
+                count = 0
+                next = self._seat_add_sub(seat, 1)
+                if next in taken_seats:
+                    count += 1
+                previous = self._seat_add_sub(seat, -1)
+                if previous in taken_seats:
+                    count += 1
+                return count
+    
+    def get_assigned_seat(self, player):
+        '''
+        Finds optimal and logical seat based on the current player distribution.
+        Returns the seat number or None if table is full.
+
+        ## EASTER EGG: for who ever is reading this, quite rare that you're even seeing this since this is the 1/2 in this repo, 
+        ## btw great use of free will to inspect this beautifully written code,
+        ## but i do wonder why you are here, u must be extremely nosey. But either way im grateful u are here. do lmk if you find would be a great conversation
+        '''
+
+        if self.num_of_players == 6:
+            return None
+        
+        taken_seats = [p.seat_number for p in self.playermodel_set.all()]
+        open_seats = [int(s) for s in self.open_seats]
+        sides_count, side_seats  = self._get_seat_patterns(taken_seats) #Gets the number of players which are side by side and the seats they're sitting on.
+        num_players = self.num_of_players
+        seat = None
+
+        if num_players == 0:
+            seat = 1
+
+        elif num_players == 1:
+            seat = self._seat_add_sub(taken_seats[0], 3)
+
+        elif num_players == 2:
+
+            if sides_count == 2: #If 2 players are sitting side-by-side, it picks a seat opposite to one of the two players.
+                seat = self._seat_add_sub(random.choices(taken_seats), 3)
+            else: #If the 2 players are sitting together with 1 free seat between them, then pick a seat so it creates a triangle.
+                  #If the 2 players are sitting opposite each other, it doesnt matter so it also performs this assignment.
+                max_seat = max(taken_seats)
+                seat = self._seat_add_sub(max_seat, 2)
+                if seat not in open_seats:
+                    seat = self._seat_add_sub(max_seat, -2)
+        elif num_players == 3:
+            if sides_count == 3: #If all players are setting side-by-side each other, picks the seat opposite to the middle player
+                max_seat = max(taken_seats)
+                seat = self._seat_add_sub(max_seat, 2)
+                if seat not in open_seats:
+                    seat = self._seat_add_sub(max_seat, -2)
+            elif sides_count == 2: #If 2 players are side-by-side with an lone player, then picks seat next to lone pla0yer.
+                lone_player = [s for s in taken_seats if s not in side_seats][0]
+                seat = self._seat_add_sub(lone_player, 1)
+                if self._check_sides(seat, taken_seats) == 2:
+                    seat = self._seat_add_sub(lone_player, -1)
+            else:
+                seat = random.choice(open_seats)
+        else:
+            seat = random.choice(open_seats)
+
+        if seat not in open_seats: #Safe fallback in-case it all goes wrong, ofc this will NEVER happens, on my soul.
+            seat = open_seats[0]
+        
+        
+        self.open_seats = self.open_seats.replace(str(seat), '')
+        self.save(update_fields=['open_seats'])
+
+        player.seat_number = seat
+        player.save(updated_fields=['seat_number'])
+        
+        return seat
 
 class PlayerModel(models.Model):
     user = models.ForeignKey('api.CustomUser', on_delete=models.CASCADE)
