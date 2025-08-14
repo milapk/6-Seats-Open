@@ -1,0 +1,94 @@
+Seat Assignment Plan along with Pseudocode Implementations
+HELPERS:
+def seat_add_sub(seat, num):
+    new_seat += num
+    if new_seat > 6:
+        new_seat = new_seat - 6
+    elif new_seat < 1:
+        new_seat = 6 - abs(new_seat)
+    return new_seat
+
+def get_type(taken, open)
+    eg taken = 125 open: 346
+    side_by_side_count = 0
+    seats_side_by_side = []
+    for seats in taken:
+        next = seat + 1
+        if next == 7;
+            next = 1
+        previous = seat - 1
+        if previous == 0:
+            previous = 6
+        if next in taken or previous in taken:
+            side_by_side_count += 1
+            seats_side_by_side.append(seat)
+    return side_by_side_count, seats_side_by_side
+0 PLAYERS:
+-Sit at Seat 1
+
+1 PLAYERS: 
+-Sit opposite:
+    Implementations
+        eg taken = '4'
+        seat = int(taken[0])
+        new_seat = seat_add_sub(seat, 3)
+        return new_seat
+        
+2 PLAYERS: 
+-If opposite: Sit anywhere
+-If side-by-side aka get_type() returns count of 2: Sit on seat that's opposite of either player
+    Implementations:
+        eg taken = '23'
+        x = random.randint(0,2)
+        seat = taken[x]
+        new_seat = seat_add_sub(seat, 3)
+        return seat
+-If 1-between sit: In triangle.
+    Implementations:
+        eg taken = '15' open = '2346'
+        max = taken[-1]
+        new_seat = seat_add_sub(max, 2)
+        if new_seat not in open:
+            new_seat = seat_add_sub(max, -2)
+        return new_seat
+
+3 PLAYERS: 
+    -If triangle aka get_type() returns count of 0 : Sit anywhere 
+    -If All side-by-side aka get_type() return count of 3: Sit opposite middle player 
+        Implementations:
+            eg taken = '345'
+            max = int(taken[-1])
+            max += 2
+            if max > 6:
+                max = max - 6
+            return max
+    
+    -If 2 side-by-side aka get_type() returns count of 2: Sit next to player not side-by-side [IDK How to implement/calculate which seat]
+        Implementations:
+            def check_sides(seat, taken):
+                count = 0
+                next = seat_add_sub(seat, 1)
+                if next in taken:
+                    count += 1
+                previous = seat_add_sub(seat, -1)
+                if previous in taken:
+                    count += 1
+                return count
+
+            eg taken = '235 open = '461';
+            count, side_by_side = get_type(taken, open)
+            sit_next_to_seat = 0
+            for seat in open:
+                if seat not in side_by_side:
+                    sit_next_to_seat = seat
+
+            next = seat_add_sub(sit_next_to_seat, 1)
+            if check_sides(next, taken) == 1:
+                return next
+            previous = seat_add_sub(sit_next_to_seat, -1)
+            if check_sides(previous, taken) == 1:
+                return previous
+
+4 PLAYERS: Sit anywhere
+5 PLAYERS: Sit in open seat aka anywhere
+6 PLAYERS: Full
