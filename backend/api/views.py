@@ -34,6 +34,7 @@ class ClaimChipsView(APIView):
     def post(self, request, format=None):
         user = request.user
         if user.claim_chips():
+            user = CustomUser.objects.get(id=user.id)
             return Response({'chips': user.chips}, status=status.HTTP_200_OK)
         else:
             cool_down = user.get_claim_cooldown()

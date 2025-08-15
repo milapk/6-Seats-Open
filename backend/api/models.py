@@ -41,7 +41,7 @@ class CustomUser(AbstractUser):
     def claim_chips(self):
         '''Claims hourly free chips if possible'''
         with transaction.atomic():
-            user = CustomUser.objects.select_for_update().get(pk=self.pk)
+            user = CustomUser.objects.select_for_update(nowait=True, of=('chips', 'chips_claimed')).get(pk=self.pk)
             if user.can_claim_chips():
                 user.chips += CHIP_CLAIM_AMOUNT
                 user.chips_claimed = timezone.now()
