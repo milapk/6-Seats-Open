@@ -56,8 +56,8 @@ class JoinGameView(APIView):
         elif buy_in > user.chips:
             return Response({'error': f'Not enough chips', 'available': user.chips, 'requested': buy_in}, status=status.HTTP_400_BAD_REQUEST)
         
-        table_type = TableTypeModel.objects.filter(small_blind=small_blind, big_blind=big_blind)
-        if not table_type.exists():
+        table_type = TableTypeModel.objects.get(small_blind=small_blind, big_blind=big_blind)
+        if not table_type:
             return Response({'error': 'Games with stakes given do not exist'}, status=status.HTTP_400_BAD_REQUEST)
         elif table_type.min_buy_in > buy_in:
             return Response({'error': f'Buy in must be greater than {table_type.min_buy_in}'}, status=status.HTTP_400_BAD_REQUEST)
@@ -66,7 +66,7 @@ class JoinGameView(APIView):
         
         player = PlayerModel.objects.get(user=user)
         if player.game is not None:
-            return Response({'error': 'User already in a game, please leave game before joining another one'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'User already in a game, please leave game before joining another one', 'seat': player.seat_number}, status=status.HTTP_400_BAD_REQUEST)
         
         game = game_matchmaking()
         if not game:
@@ -78,6 +78,8 @@ class JoinGameView(APIView):
                 return Response({'success': f'Join Game:{game.id} successfully', 'seat': seat}, status=status.HTTP_200_OK)
             else :
                 return Response({'error': f'Unable to join. Try again'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': f'Unable to join. Try again'}, status=status.HTTP_400_BAD_REQUEST)
+        
 
 class LeaveGameView(APIView):
     permission_classes = [IsAuthenticated]

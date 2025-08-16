@@ -7,5 +7,6 @@ urlpatterns = [
     path('refresh-token/', TokenRefreshView.as_view(), name='refresh_token'),
     path('register/', RegisterView.as_view(), name='register'),
     path('get-table-data/', HomePageDataView.as_view(), name='get_table_data'),
-    path('claim-chips/', ClaimChipsView.as_view(), name='claim_chips')
+    path('claim-chips/', ClaimChipsView.as_view(), name='claim_chips'),
+    path('join-game/', JoinGameView.as_view(), name='join_game'),
 ]

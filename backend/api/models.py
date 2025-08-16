@@ -41,7 +41,7 @@ class CustomUser(AbstractUser):
     def claim_chips(self):
         '''Claims hourly free chips if possible'''
         with transaction.atomic():
-            user = CustomUser.objects.select_for_update(of=('chips', 'chips_claimed')).get(pk=self.pk)
+            user = CustomUser.objects.select_for_update().get(pk=self.pk)
             if user.can_claim_chips():
                 user.chips += CHIP_CLAIM_AMOUNT
                 user.chips_claimed = timezone.now()
@@ -116,13 +116,14 @@ class GameModel(models.Model):
             return None
         
         with transaction.atomic():
-            game = GameModel.objects.select_for_update(of=('open_seats',)).get(pk=self.pk)
-            player = PlayerModel.objects.select_for_update(of=('seat_number',)).get(pk=player_pk)
+            game = GameModel.objects.select_for_update().get(pk=self.pk)
+            player = PlayerModel.objects.select_for_update().get(pk=player_pk)
 
-            taken_seats = [p.seat_number for p in game.playermodel_set.all()]
+            
             open_seats = [int(s) for s in game.open_seats]
+            taken_seats = [seat for seat in range(1, 7) if seat not in open_seats]
             sides_count, side_seats  = self._get_seat_patterns(taken_seats) #Gets the number of players which are side by side and the seats they're sitting on.
-            num_players = self.num_of_players
+            num_players = self.num_of_players - 1
             seat = None
 
             if num_players == 0:
@@ -132,7 +133,6 @@ class GameModel(models.Model):
                 seat = self._seat_add_sub(taken_seats[0], 3)
 
             elif num_players == 2:
-
                 if sides_count == 2: #If 2 players are sitting side-by-side, it picks a seat opposite to one of the two players.
                     seat = self._seat_add_sub(random.choices(taken_seats), 3)
                 else: #If the 2 players are sitting together with 1 free seat between them, then pick a seat so it creates a triangle.
@@ -164,7 +164,7 @@ class GameModel(models.Model):
             self.save(update_fields=['open_seats'])
 
             player.seat_number = seat
-            player.save(updated_fields=['seat_number'])
+            player.save(update_fields=['seat_number'])
             
             return seat
 
@@ -173,7 +173,7 @@ class PlayerModel(models.Model):
     game = models.ForeignKey('GameModel', on_delete=models.CASCADE, null=True)
     cards = models.CharField(max_length=5, null=True)
     seat_number = models.PositiveIntegerField(null=True)
-    chip_in_play = models.PositiveIntegerField(null=True)
+    chips_in_play = models.PositiveIntegerField(null=True)
     current_bet = models.PositiveIntegerField(null=True)
     all_in = models.BooleanField(default=False)
     is_folded = models.BooleanField(default=False)
@@ -186,8 +186,8 @@ class PlayerModel(models.Model):
         Returns False if user is already in a game or if user has insufficient chips.
         '''
         with transaction.atomic():
-            user = CustomUser.objects.select_for_update(of=('chips',)).get(pk=user_pk)
-            player = PlayerModel.objects.select_for_update(of=('chips_in_play', 'game')).get(pk=self.pk)
+            user = CustomUser.objects.select_for_update().get(pk=user_pk)
+            player = PlayerModel.objects.select_for_update().get(pk=self.pk)
 
             if player.game:
                 return False
@@ -197,24 +197,25 @@ class PlayerModel(models.Model):
 
             user.chips -= buy_in
             player.game = game
-            player.chip_in_play = buy_in
+            player.chips_in_play = buy_in
 
             user.save(update_fields=['chips'])
             player.save(update_fields=['chips_in_play', 'game'])
+            return True
 
     def leave_game(self, user_pk, game_pk):
         with transaction.atomic():
             player = PlayerModel.objects.select_for_update().get(pk=user_pk)
             user = CustomUser.objects.select_for_update().get(pk=user.id)
-            game = GameModel.objects.select_for_update(of=('open_seats', 'num_of_players')).get(pk=game_pk)
+            game = GameModel.objects.select_for_update().get(pk=game_pk)
 
-            user.chips += player.chip_in_play
+            user.chips += player.chips_in_play
 
             current_seats = set(game.open_seats).add(str(player.seat_number))
             game.open_seats = ''.join(sorted(current_seats))
             game.num_of_players -= 1
 
-            player.chip_in_play = 0
+            player.chips_in_play = 0
             player.seat_number = None
             player.game = None
             player.is_folded = False
@@ -223,5 +224,5 @@ class PlayerModel(models.Model):
             player.total_round_bet = 0
 
             user.save(update_fields=['chips'])
-            game.save(updated_fields=['open_seats', 'num_of_players'])
+            game.save(update_fields=['open_seats', 'num_of_players'])
             player.save(update_fields=['chips_in_play', 'seat_number', 'game', 'is_folded', 'all_in', 'current_bet', 'total_round_bet'])
