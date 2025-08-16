@@ -10,9 +10,13 @@ def get_jwt_tokens(user):
 def game_matchmaking():
     '''Returns a suitable non-full game the user can join or None if all games are full.'''
     with transaction.atomic():
-        game = GameModel.objects.select_for_update.filter(num_of_players__lt=6).order_by('num_of_players', 'created_at').first()
+        game = GameModel.objects.select_for_update(of=('num_of_players',)).filter(num_of_players__lt=6).order_by('num_of_players', 'created_at').first()
+       
         if not game:
             return None
+        elif game.num_of_players == 6:
+            return None
+        
         game.num_of_player += 1
         game.save(update_fields=['num_of_players'])
         return game

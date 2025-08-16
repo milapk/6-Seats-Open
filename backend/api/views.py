@@ -18,7 +18,7 @@ class RegisterView(APIView):
             return Response({'refresh': refresh, 'access': access, 'chips': user.chips}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class GetTableDataView(APIView):
+class HomePageDataView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, format=None):
         user = request.user
@@ -27,7 +27,7 @@ class GetTableDataView(APIView):
             total_players=Count('gamemodel__playermodel', distinct=True)
             ).values('big_blind', 'small_blind', 'min_buy_in','game_count', 'total_players'))
         data = [{'big_blind': item['big_blind'], 'small_blind': item['small_blind'],'buy_in': item['min_buy_in'],'games': item['game_count'], 'players': item['total_players']} for item in data]
-        return Response({'table_data': data, 'chips': user.chips}, status=status.HTTP_200_OK)
+        return Response({'table_data': data, 'chips': user.chips, 'username': user.username}, status=status.HTTP_200_OK)
     
 class ClaimChipsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -54,7 +54,7 @@ class JoinGameView(APIView):
         if not buy_in:
             return Response({'error': 'Request must contain "buy_in"'}, status=status.HTTP_400_BAD_REQUEST)
         elif buy_in > user.chips:
-            return Response({'error': f'Requested buy in was {buy_in} while User only has {user.chips} chips'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f'Not enough chips', 'available': user.chips, 'requested': buy_in}, status=status.HTTP_400_BAD_REQUEST)
         
         table_type = TableTypeModel.objects.filter(small_blind=small_blind, big_blind=big_blind)
         if not table_type.exists():
@@ -71,9 +71,10 @@ class JoinGameView(APIView):
         game = game_matchmaking()
         if not game:
             game = GameModel.objects.create(table_type=table_type, num_of_players=1)
-        player.game = game
-        user.chips -= buy_in
-        player.chip_in_play = buy_in
-        user.save(update_fields=['chips'])
-        #asssign player a seat
-        return Response({'success': f'Join Game:{game.id} successfully'}, status=status.HTTP_200_OK)
+
+        if player.join_game(game, user.pk, buy_in):
+            seat = game.get_assigned_seat(player.pk)
+            if seat:
+                return Response({'success': f'Join Game:{game.id} successfully', 'seat': seat}, status=status.HTTP_200_OK)
+            else :
+                return Response({'error': f'Unable to join. Try again'}, status=status.HTTP_400_BAD_REQUEST)
