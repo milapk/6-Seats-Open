@@ -1,0 +1,56 @@
+[
+    {
+      "model": "api.TableTypeModel",
+      "fields": {
+        "small_blind": 1,
+        "big_blind": 2,
+        "min_buy_in": 100,
+        "max_buy_in": 400
+      }
+    },
+    {
+      "model": "api.TableTypeModel",
+      "fields": {
+        "small_blind": 5,
+        "big_blind": 10,
+        "min_buy_in": 500,
+        "max_buy_in": 2000
+      }
+    },
+    {
+      "model": "api.TableTypeModel",
+      "fields": {
+        "small_blind": 10,
+        "big_blind": 20,
+        "min_buy_in": 1000,
+        "max_buy_in": 4000
+      }
+    },
+    {
+      "model": "api.TableTypeModel",
+      "fields": {
+        "small_blind": 50,
+        "big_blind": 100,
+        "min_buy_in": 5000,
+        "max_buy_in": 20000
+      }
+    },
+    {
+      "model": "api.TableTypeModel",
+      "fields": {
+        "small_blind": 250,
+        "big_blind": 500,
+        "min_buy_in": 25000,
+        "max_buy_in": 100000
+      }
+    },
+    {
+      "model": "api.TableTypeModel",
+      "fields": {
+        "small_blind": 500,
+        "big_blind": 1000,
+        "min_buy_in": 50000,
+        "max_buy_in": 200000
+      }
+    }
+  ]
