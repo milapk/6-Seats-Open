@@ -78,3 +78,15 @@ class JoinGameView(APIView):
                 return Response({'success': f'Join Game:{game.id} successfully', 'seat': seat}, status=status.HTTP_200_OK)
             else :
                 return Response({'error': f'Unable to join. Try again'}, status=status.HTTP_400_BAD_REQUEST)
+
+class LeaveGameView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, format=None):
+        user = request.user
+        player = PlayerModel.objects.get(user=user)
+        game = player.game
+        if not game:
+            return Response({'error': 'Leave game failed since player not in any game'}, status=status.HTTP_400_BAD_REQUEST)
+
+        player.leave_game(user.pk, game.pk)
+        return Response({'success': f'Left Game:{game.id} successfully'}, status=status.HTTP_200_OK)

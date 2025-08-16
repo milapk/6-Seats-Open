@@ -201,3 +201,27 @@ class PlayerModel(models.Model):
 
             user.save(update_fields=['chips'])
             player.save(update_fields=['chips_in_play', 'game'])
+
+    def leave_game(self, user_pk, game_pk):
+        with transaction.atomic():
+            player = PlayerModel.objects.select_for_update().get(pk=user_pk)
+            user = CustomUser.objects.select_for_update().get(pk=user.id)
+            game = GameModel.objects.select_for_update(of=('open_seats', 'num_of_players')).get(pk=game_pk)
+
+            user.chips += player.chip_in_play
+
+            current_seats = set(game.open_seats).add(str(player.seat_number))
+            game.open_seats = ''.join(sorted(current_seats))
+            game.num_of_players -= 1
+
+            player.chip_in_play = 0
+            player.seat_number = None
+            player.game = None
+            player.is_folded = False
+            player.all_in = False
+            player.current_bet = 0
+            player.total_round_bet = 0
+
+            user.save(update_fields=['chips'])
+            game.save(updated_fields=['open_seats', 'num_of_players'])
+            player.save(update_fields=['chips_in_play', 'seat_number', 'game', 'is_folded', 'all_in', 'current_bet', 'total_round_bet'])
