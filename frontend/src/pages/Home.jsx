@@ -8,6 +8,8 @@ import numeral from "numeral";
 
 export default function Home() {
     const [tableData, setTableData] = useState([]);
+    const [buyIn, setBuyIn] = useState(100);
+
     const [playerChip, setPlayerChips] = useState(0);
     const [alertMessage, setAlertMessage] = useState("");
     const [alertType, setAlertType] = useState('error')
@@ -24,6 +26,7 @@ export default function Home() {
         };
         fetchData();
     }, []);
+
     const handleClaimChips = async () => {
         try {
             const response = await api.post("/api/claim-chips/");
@@ -40,6 +43,18 @@ export default function Home() {
             }
         }
     };
+
+    const handleJoinGame = async (smallBlind, bigBlind) => {
+        const response = await api.post('/api/join-game/', {
+            big_blind: bigBlind,
+            small_blind: smallBlind,
+            buy_in: buyIn,
+        })
+
+        if (response.status === 200) {
+            console.log(response.data.success)
+        }
+    }
     return (
         <div id="home-root">
             <AutoCloseAlert
@@ -73,6 +88,7 @@ export default function Home() {
                                     variant="contained"
                                     color="secondary"
                                     className="button"
+                                    onClick={() => handleJoinGame(table.small_blind, table.big_blind)}
                                 >
                                     JOIN
                                 </Button>
