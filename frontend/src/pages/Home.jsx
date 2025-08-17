@@ -2,14 +2,17 @@ import { useState, useEffect } from "react";
 import PersonIcon from "@mui/icons-material/Person";
 import { Button } from "@mui/material";
 import AutoCloseAlert from "../components/CustomAlerts.jsx";
+import BuyInDialog from "../components/BuyInDialog.jsx";
 import api from "../api.js";
 import "../styles/Home.css";
 import numeral from "numeral";
 
+
 export default function Home() {
     const [tableData, setTableData] = useState([]);
-    const [buyIn, setBuyIn] = useState(100);
-
+    const [smallBlind, setSmallBlind] = useState(0);
+    const [bigBlind, setBigBlind] = useState(0);
+    const [dialogOpen, setDialogOpen] = useState(false);
     const [playerChip, setPlayerChips] = useState(0);
     const [alertMessage, setAlertMessage] = useState("");
     const [alertType, setAlertType] = useState('error')
@@ -44,19 +47,26 @@ export default function Home() {
         }
     };
 
-    const handleJoinGame = async (smallBlind, bigBlind) => {
-        const response = await api.post('/api/join-game/', {
-            big_blind: bigBlind,
-            small_blind: smallBlind,
-            buy_in: buyIn,
-        })
+    const handleLeave = async () => {
+        const response = await api.post("/api/leave-game/");
+    }
 
-        if (response.status === 200) {
-            console.log(response.data.success)
-        }
+    const handleDialognOpen = async (smallBlind, bigBlind) => {
+        setBigBlind(bigBlind);
+        setSmallBlind(smallBlind);
+        setDialogOpen(true)
+
     }
     return (
         <div id="home-root">
+            <BuyInDialog
+                open={dialogOpen}
+                onClose={() => setDialogOpen(false)}
+                minBuyIn={100}
+                maxBuyIn={1000}
+                smallBlind={smallBlind}
+                bigBlind={bigBlind}
+            ></BuyInDialog>
             <AutoCloseAlert
                 message={alertMessage}
                 severity={alertType}
@@ -88,7 +98,7 @@ export default function Home() {
                                     variant="contained"
                                     color="secondary"
                                     className="button"
-                                    onClick={() => handleJoinGame(table.small_blind, table.big_blind)}
+                                    onClick={() => handleDialognOpen(table.small_blind, table.big_blind)}
                                 >
                                     JOIN
                                 </Button>
@@ -100,7 +110,7 @@ export default function Home() {
             <div id="sidebar">
                 <div id="sidebar-profile">
                     <PersonIcon></PersonIcon>
-                    <div id="sidebar-chips">Chips: {playerChip}</div>
+                    <div id="sidebar-chips">Chips: £{playerChip}</div>
                 </div>
                 <div id="sidebar-private">
                     <div>Private tables</div>
@@ -132,6 +142,16 @@ export default function Home() {
                         onClick={handleClaimChips}
                     >
                         Claim chips
+                    </Button>
+                </div>
+                <div id="sidebar-claim">
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        className="button"
+                        onClick={handleLeave}
+                    >
+                        Leave
                     </Button>
                 </div>
             </div>

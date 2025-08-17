@@ -1,0 +1,12 @@
+#dialog-content {
+    padding: 0px 10px 0px 10px;
+    align-self: center;
+}
+
+#dialog-title {
+    align-self: center;
+}
+
+#dialog-items {
+    margin-top: 10px;
+}
