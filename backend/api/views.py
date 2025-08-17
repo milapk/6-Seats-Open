@@ -76,8 +76,6 @@ class JoinGameView(APIView):
             seat = game.get_assigned_seat(player.pk)
             if seat:
                 return Response({'success': f'Join Game:{game.id} successfully', 'seat': seat}, status=status.HTTP_200_OK)
-            else :
-                return Response({'error': f'Unable to join. Try again'}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'error': f'Unable to join. Try again'}, status=status.HTTP_400_BAD_REQUEST)
         
 

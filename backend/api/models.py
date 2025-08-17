@@ -112,9 +112,6 @@ class GameModel(models.Model):
         ## btw great use of free will to inspect this beautifully written code,
         ## but i do wonder why you are here, u must be extremely nosey. But either way im grateful u are here. do lmk if you find this, would be a great conversation
         '''
-        if self.num_of_players == 6:
-            return None
-        
         with transaction.atomic():
             game = GameModel.objects.select_for_update().get(pk=self.pk)
             player = PlayerModel.objects.select_for_update().get(pk=player_pk)
@@ -206,12 +203,13 @@ class PlayerModel(models.Model):
     def leave_game(self, user_pk, game_pk):
         with transaction.atomic():
             player = PlayerModel.objects.select_for_update().get(pk=user_pk)
-            user = CustomUser.objects.select_for_update().get(pk=user.id)
+            user = CustomUser.objects.select_for_update().get(pk=user_pk)
             game = GameModel.objects.select_for_update().get(pk=game_pk)
 
             user.chips += player.chips_in_play
 
-            current_seats = set(game.open_seats).add(str(player.seat_number))
+            current_seats = [s for s in game.open_seats]
+            current_seats.append(str(player.seat_number))
             game.open_seats = ''.join(sorted(current_seats))
             game.num_of_players -= 1
 
