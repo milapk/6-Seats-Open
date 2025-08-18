@@ -63,6 +63,8 @@ export default function UserForm({ type }) {
             return;
         }
         try {
+            localStorage.clear();
+            sessionStorage.clear();
             if (type === "LOGIN") {
                 handleLogin();
             } else if (type === "REGISTER") {
