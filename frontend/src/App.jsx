@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Home from './pages/Home'
 import NotFound from './pages/NotFound'
 import Register from './pages/Register'
+import PokerGame from "./pages/PokerGame";
 
 function Logout() {
     localStorage.clear();
@@ -24,6 +25,7 @@ function App() {
                     <Route path="/logout" element={<Logout />} />
                     <Route path="/" element={<ProtectedRoute />}>
                         <Route index element={<Home />} />
+                        <Route path="/game" element={<PokerGame />}/>
                     </Route>
                     <Route path="*" element={<NotFound />} />
                 </Routes>
