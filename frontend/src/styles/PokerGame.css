@@ -1,0 +1,106 @@
+#game-root {
+    display: flex;
+    color: white;
+    height: 100%;
+    position: relative;
+}
+
+#game-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+    padding: 0px 20px 20px 20px;
+    background: radial-gradient(circle at center, #995a53, #570303);
+    margin: 1% 1%;
+    width: 100%;
+    position: relative;
+}
+#game-poker-table {
+    position: relative;
+    width: 50%;
+    height: 70%;
+    background: radial-gradient(circle at center, #2d8546, #033e0e);
+    border-radius: 200px;
+    border: 15px black solid;
+    margin-top: 2%;
+}
+
+.seat {
+    position: absolute;
+    width: 80px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100px;
+    height: 100px;
+}
+
+.seat-1 {
+    bottom: -10%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.seat-2 {
+    top: 70%;
+    left: -10%;
+    transform: translateY(-50%);
+}
+.seat-3 {
+    top: 20%;
+    left: -10%;
+    transform: translateY(-50%);
+}
+.seat-4 {
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.seat-5 {
+    top: 20%;
+    right: -10%;
+    transform: translateY(-50%);
+}
+.seat-6 {
+    top: 70%;
+    right: -10%;
+    transform: translateY(-50%);
+}
+
+.player-circle {
+    background-color: rgb(48, 223, 223);
+    height: 80%;
+    width: 80%;
+    border-radius: 50%;
+}
+.active {
+    background-color: rgb(227, 202, 58);
+}
+
+#player-name {
+    position: absolute;
+    background-color: #1f1f22;
+    width: 90%;
+    border-radius: 5px;
+    padding: 5px 0px 15px 0px;
+    top: 50px;
+}
+
+#player-chips {
+    position: absolute;
+    background-color: #111112;
+    padding: 2px 0px 5px 0px;
+    width: 90%;
+    top: 75px;
+    border-radius: 5px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+
+}
+
+#game-leave-button {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+}
