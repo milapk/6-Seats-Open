@@ -75,8 +75,8 @@ class GameModel(models.Model):
     num_of_players = models.PositiveIntegerField(default=0, max_length=6)
     betting_stage = models.PositiveSmallIntegerField(choices=stage_choices, default=0)
     dealer_position = models.PositiveIntegerField(default=0)
-    community_cards = models.CharField(max_length=14, blank=True)
-    open_seats = models.CharField(default='123456')
+    community_cards = models.CharField(max_length=14, null=True)
+    open_seats = models.CharField(default='123456', null=True)
 
     def _seat_add_sub(self, seat, num) -> int:
         """Performs circular seat arithmetic"""
@@ -164,6 +164,59 @@ class GameModel(models.Model):
             player.save(update_fields=['seat_number'])
             
             return seat
+        
+    def _get_centric_adjusted_seats(self, player_pk):
+        '''
+        Returns the seat sequence 1-6 rotated so the current player is a position 1 ensuring the user always
+        sees themselves at the bottom middle seat.
+        Needed so frontend UI know how to position players correctly.
+
+        Args:
+            player_pk: PK number of users player model.
+
+        Returns:
+            dictionary: Containing username and chips in game of players in their respective seat or None if seat empty;
+            eg {'1': {'username': 'user1', 'chips': 120}, '2': None ...}
+        '''
+        taken_seats = [seat for seat in range(1, 7) if str(seat) not in self.open_seats]
+        all_seats = [1,2,3,4,5,6]
+        player = PlayerModel.objects.get(pk=player_pk)
+        player_seat = player.seat_number
+
+        if not player_seat or not player.game:
+            return None
+        
+        index = all_seats.index(player_seat)
+        rotated_seats = all_seats[index:] + all_seats[0: index]
+        player_info = {}
+        print(rotated_seats)
+        for i, seat in enumerate(rotated_seats):
+            if seat in taken_seats:
+                seat_player = PlayerModel.objects.get(game=self.pk, seat_number=seat)
+                player_info[str(seat)]  = {
+                    'username': seat_player.user.username, 
+                    'chips': seat_player.chips_in_play,
+                    'id': seat_player.id
+                }
+            else:
+                player_info[str(seat)] = None
+
+        return player_info
+
+    def get_game_info(self, player_pk):
+        '''
+        Returns:
+            dictioary: containing stakes, number of players, and (username + chips) for each player in-game.
+        '''
+        seats = self._get_centric_adjusted_seats(player_pk)
+        game_info = {}
+        if seats:
+            game_info['small_blind'] = self.table_type.small_blind
+            game_info['big_blind'] = self.table_type.big_blind
+            game_info['num_of_players'] = self.num_of_players
+            game_info['seats'] = seats
+        return game_info
+
 
 class PlayerModel(models.Model):
     user = models.ForeignKey('api.CustomUser', on_delete=models.CASCADE)
