@@ -29,17 +29,30 @@ class CustomUser(AbstractUser):
         return self.username
     
     def can_claim_chips(self):
-        '''Checks if the user is eligible to claim chips (1 hour cooldown)'''
+        '''
+        Checks if the user is eligible to claim chips (1 hour cooldown)
+
+        Return:
+            -boolean: True if cooldown over else False.
+        '''
         return timezone.now() >= self.chips_claimed + timedelta(hours=1)
     
     def get_claim_cooldown(self):
-        '''Returns seconds remaining until next claim, or 0 if ready'''
+        '''
+        Return:
+            -int: the number of seconds remaining until next claim, or 0 if ready now
+        '''
         next_claim_time = self.chips_claimed + timedelta(hours=1)
         remaining_time = (next_claim_time - timezone.now()).total_seconds()
         return max(0, remaining_time)
 
     def claim_chips(self):
-        '''Claims hourly free chips if possible'''
+        '''
+        Claims hourly free chips if possible.
+
+        Return:
+            -boolean: True if chips claimed else False if claim was unsuccessful"
+        '''
         with transaction.atomic():
             user = CustomUser.objects.select_for_update().get(pk=self.pk)
             if user.can_claim_chips():
@@ -79,34 +92,54 @@ class GameModel(models.Model):
     open_seats = models.CharField(default='123456', null=True)
 
     def _seat_add_sub(self, seat, num) -> int:
-        """Performs circular seat arithmetic"""
+        """
+        Performs circular seat arithmetic; adds seat + num making sure new seat is between 1 and 6.
+
+        Return:
+            -int: an integer between 1 and 6
+        """
         new_seat = seat + num
         while new_seat > 6: new_seat -= 6
         while new_seat < 1: new_seat += 6
         return new_seat
     
     def _get_seat_patterns(self, taken_seats):
-            """Identifies seating patterns"""
-            side_by_side = []
-            for seat in taken_seats:
-                if self._seat_add_sub(seat, 1) in taken_seats or self._seat_add_sub(seat, -1) in taken_seats:
-                    side_by_side.append(seat)
-            return len(side_by_side), side_by_side
+        """
+        Used to identify where players are sitting.
+
+        Return:
+            -int, list: the number of players sat side-by-side and the list of seats of which the players side-by-side are sitting on
+        """
+        side_by_side = []
+        for seat in taken_seats:
+            if self._seat_add_sub(seat, 1) in taken_seats or self._seat_add_sub(seat, -1) in taken_seats:
+                side_by_side.append(seat)
+        return len(side_by_side), side_by_side
 
     def _check_sides(self, seat, taken_seats):
-                count = 0
-                next = self._seat_add_sub(seat, 1)
-                if next in taken_seats:
-                    count += 1
-                previous = self._seat_add_sub(seat, -1)
-                if previous in taken_seats:
-                    count += 1
-                return count
+        """
+        Finds how many players are sitting next to a certain seat.
+
+        Return:
+            -int: the number of players sitting next to the seat passed in the argument
+        """
+        
+        count = 0
+        next = self._seat_add_sub(seat, 1)
+        if next in taken_seats:
+            count += 1
+        previous = self._seat_add_sub(seat, -1)
+        if previous in taken_seats:
+            count += 1
+        return count
     
     def get_assigned_seat(self, player_pk):
         '''
         Assigns optimal and logical seat based on the current player distribution.
-        Returns seat number or None if table is full.
+
+        Return:
+            -int: seat number or None if table is full.
+
 
         ## EASTER EGG: for who ever is reading this, quite rare that you're even seeing this since this is the 1/2 in this repo, 
         ## btw great use of free will to inspect this beautifully written code,
@@ -171,11 +204,11 @@ class GameModel(models.Model):
         sees themselves at the bottom middle seat.
         Needed so frontend UI know how to position players correctly.
 
-        Args:
-            player_pk: PK number of users player model.
+        Arguments:
+            -player_pk: PK number of users player model.
 
-        Returns:
-            dictionary: Containing username and chips in game of players in their respective seat or None if seat empty;
+        Return:
+            -dictionary: Containing username and chips in game of players in their respective seat or None if seat empty;
             eg {'1': {'username': 'user1', 'chips': 120}, '2': None ...}
         '''
         taken_seats = [seat for seat in range(1, 7) if str(seat) not in self.open_seats]
@@ -205,8 +238,8 @@ class GameModel(models.Model):
 
     def get_game_info(self, player_pk):
         '''
-        Returns:
-            dictioary: containing stakes, number of players, and (username + chips) for each player in-game.
+        Return:
+            -dictioary: containing stakes, number of players, and (username + chips) for each player in-game.
         '''
         seats = self._get_centric_adjusted_seats(player_pk)
         game_info = {}
@@ -233,7 +266,9 @@ class PlayerModel(models.Model):
     def join_game(self, game, user_pk, buy_in):
         '''
         Assigns the game to the player and updates chips after buy-in.
-        Returns False if user is already in a game or if user has insufficient chips.
+
+        Return:
+            -boolean: False if user is already in a game or if user has insufficient chips else True.
         '''
         with transaction.atomic():
             user = CustomUser.objects.select_for_update().get(pk=user_pk)
@@ -254,6 +289,9 @@ class PlayerModel(models.Model):
             return True
 
     def leave_game(self, user_pk, game_pk):
+        '''
+        Player leaves game by updates/resetting nessecary fields in user, player and game models.
+        '''
         with transaction.atomic():
             player = PlayerModel.objects.select_for_update().get(pk=user_pk)
             user = CustomUser.objects.select_for_update().get(pk=user_pk)
