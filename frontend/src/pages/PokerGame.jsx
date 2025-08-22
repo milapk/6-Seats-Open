@@ -45,6 +45,17 @@ export default function PokerGame() {
                         />
                     ))}
                 </div>
+                <div id="game-buttons">
+                    <Button className="action-btn fold-btn" variant="contained">
+                        Fold
+                    </Button>
+                    <Button className="action-btn call-btn" variant="contained">
+                        Call/Check
+                    </Button>
+                    <Button className="action-btn raise-btn" variant="contained">
+                        Bet/Raise
+                    </Button>
+                </div>
             </div>
         </div>
     );
