@@ -7,7 +7,6 @@ import api from "../api.js";
 import "../styles/Home.css";
 import numeral from "numeral";
 
-
 export default function Home() {
     const [tableData, setTableData] = useState([]);
     const [smallBlind, setSmallBlind] = useState(0);
@@ -15,7 +14,7 @@ export default function Home() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [playerChip, setPlayerChips] = useState(0);
     const [alertMessage, setAlertMessage] = useState("");
-    const [alertType, setAlertType] = useState('error')
+    const [alertType, setAlertType] = useState("error");
 
     useEffect(() => {
         const fetchData = async () => {
@@ -35,28 +34,27 @@ export default function Home() {
             const response = await api.post("/api/claim-chips/");
             if (response.status === 200) {
                 setPlayerChips(response.data.chips);
-                setAlertType('success');
-                setAlertMessage('Chips claimed successfully! Get more in an Hour!')
+                setAlertType("success");
+                setAlertMessage(
+                    "Chips claimed successfully! Get more in an Hour!"
+                );
             }
         } catch (error) {
-            if (error.response && error.response.status === 406){
-                const time =  Math.floor(error.response.data.cool_down / 60)
-                setAlertType('error');
-                setAlertMessage(`Chips already claimed! Get more in an ${time} minutes!`)
+            if (error.response && error.response.status === 406) {
+                const time = Math.floor(error.response.data.cool_down / 60);
+                setAlertType("error");
+                setAlertMessage(
+                    `Chips already claimed! Get more in an ${time} minutes!`
+                );
             }
         }
     };
 
-    const handleLeave = async () => {
-        const response = await api.post("/api/leave-game/");
-    }
-
     const handleDialognOpen = async (smallBlind, bigBlind) => {
         setBigBlind(bigBlind);
         setSmallBlind(smallBlind);
-        setDialogOpen(true)
-
-    }
+        setDialogOpen(true);
+    };
     return (
         <div id="home-root">
             <BuyInDialog
@@ -98,7 +96,12 @@ export default function Home() {
                                     variant="contained"
                                     color="secondary"
                                     className="button"
-                                    onClick={() => handleDialognOpen(table.small_blind, table.big_blind)}
+                                    onClick={() =>
+                                        handleDialognOpen(
+                                            table.small_blind,
+                                            table.big_blind
+                                        )
+                                    }
                                 >
                                     JOIN
                                 </Button>
@@ -142,16 +145,6 @@ export default function Home() {
                         onClick={handleClaimChips}
                     >
                         Claim chips
-                    </Button>
-                </div>
-                <div id="sidebar-claim">
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        className="button"
-                        onClick={handleLeave}
-                    >
-                        Leave
                     </Button>
                 </div>
             </div>
