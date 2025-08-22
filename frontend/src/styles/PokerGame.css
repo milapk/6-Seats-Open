@@ -1,40 +1,42 @@
 #game-root {
     display: flex;
     color: white;
-    height: 100%;
+    height: 100vh;
     position: relative;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 #game-container {
     display: flex;
-    justify-content: center;
     align-items: center;
     border-radius: 5px;
-    padding: 0px 20px 20px 20px;
-    background: radial-gradient(circle at center, #995a53, #570303);
+    padding: 30px 0px 0px 100px;
+    background: radial-gradient(circle at center, rgb(113, 43, 43), rgb(125, 25, 25));
     margin: 1% 1%;
     width: 100%;
     position: relative;
 }
 #game-poker-table {
     position: relative;
-    width: 50%;
-    height: 70%;
-    background: radial-gradient(circle at center, #2d8546, #033e0e);
+    width: 60%;
+    height: 75%;
+    background: radial-gradient(circle at center, #1c6b3c 0%, #0e3a20 60%, #082312 100%);
     border-radius: 200px;
-    border: 15px black solid;
-    margin-top: 2%;
+    border: 15px solid #df8429ef;
+    box-shadow: 
+        0 0 0 3px #000,
+        inset 0 0 30px rgb(0, 0, 0),
+        0px 0px 50px rgba(0, 0, 0, 0.982);
 }
 
 .seat {
     position: absolute;
-    width: 80px;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
 }
 
 .seat-1 {
@@ -69,38 +71,105 @@
 }
 
 .player-circle {
-    background-color: rgb(48, 223, 223);
-    height: 80%;
-    width: 80%;
+    background: linear-gradient(145deg, #2a2a3a, #1c1c2a);
+    height: 70%;
+    width: 70%;
     border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 3px solid #444;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
-.active {
-    background-color: rgb(227, 202, 58);
+
+.player-circle.active {
+    background: linear-gradient(180deg, #d9b338, #715e1e);
+    border: 3px solid #f0d05c;
+    box-shadow: 0 0 15px rgba(217, 179, 56, 0.815);
 }
 
 #player-name {
     position: absolute;
-    background-color: #1f1f22;
-    width: 90%;
+    background: linear-gradient(to bottom, #2d2d3d, #1f1f2d);
+    width: 100%;
     border-radius: 5px;
     padding: 5px 0px 15px 0px;
     top: 50px;
+    top: 75px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    border: 1px solid #3a3a4a;
+
 }
 
 #player-chips {
     position: absolute;
-    background-color: #111112;
-    padding: 2px 0px 5px 0px;
-    width: 90%;
-    top: 75px;
+    background: linear-gradient(to bottom, #121218, #0a0a10);
+    padding: 4px 0;
+    width: 100%;
+    top: 98px;
     border-radius: 5px;
-    border-top-left-radius: 0px;
-    border-top-right-radius: 0px;
-
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    font-size: 14px;
+    font-weight: bold;
+    color: #e0c168;
+    border: 1px solid #2a2a3a;
+    border-top: none;
 }
 
 #game-leave-button {
     position: absolute;
     right: 10px;
     top: 10px;
+}
+
+#game-buttons {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    top: 70%;
+    right: 1%;
+    gap: 10px;
+    background-color: #000;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+.action-btn {
+    display: flex;
+    padding: 12px 25px;
+    justify-content: center;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    min-width: 100px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+}
+
+.fold-btn {
+    background: linear-gradient(to bottom, #d32f2f, #e90101);
+    color: white;
+}
+
+.call-btn {
+    background: linear-gradient(to bottom, #4caf50, #2e7d32);
+    color: white;
+}
+
+.raise-btn {
+    background: linear-gradient(to bottom, #ff9800, #ef6c00);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4);
+}
+
+.action-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
