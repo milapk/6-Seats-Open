@@ -1,6 +1,6 @@
 import "../styles/PokerGame.css";
 import { Button } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AutoCloseAlert from "../components/CustomAlerts";
 import api from "../api";
@@ -8,6 +8,7 @@ import api from "../api";
 export default function PokerGame() {
     const [alertMessage, setAlertMessage] = useState("");
     const navigate = useNavigate();
+    const socketRef = useRef(null);
     const [gameState, setGameState] = useState({
         stakes: { small: 1, big: 2 },
         players: [
@@ -19,6 +20,31 @@ export default function PokerGame() {
             { id: 6, chips: 250, active: false },
         ],
     });
+
+    useEffect(() => {
+        const socket = new WebSocket('ws://localhost:8000/ws/poker/')
+
+        socket.onopen = () => {
+            console.log('WebSocket connection established');
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Received message:', data);
+        };
+         
+        socket.onclose = () => {
+            console.log('WebSocket connection closed');
+        };
+
+        socketRef.current = socket;
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.close();
+            }
+          };
+    }, [])
 
     const PlayerSeat = ({ position, chips, isActive }) => {
         return (
