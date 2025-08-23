@@ -13,13 +13,15 @@ Each poker game will run within a dedicated Channels consumer that coordinates p
 ## Current Features
 
 - **Authentication**: Login, Register, JWT-based authentication.
+- **Lobby/Home**: Browse and join public tables.
+- **Poker Gameplay**: Initial game set-up (WIP)
 
-*This list may not be up-to-date. Last updated at: 8th August 25
+*This list may not be up-to-date. Last updated at: 23rd August 25
 
 ## Planned Features 📌
 
-- **Lobby/Home**: Browse and join public tables, or create private tables.
-- **Poker Gameplay**: Real-time gameplay, betting logic, chip management.
+- **Lobby/Home**: Create and Join private tables.
+- **Poker Gameplay**: Real-time gameplay, betting logic, chip management and everything else.
 - **Game History**: Player stats, match history, leaderboards via a profile page.
 
 ## Tech Stack
@@ -32,5 +34,5 @@ Each poker game will run within a dedicated Channels consumer that coordinates p
 
 **Backend**
 - Django + Django REST Framework
-- PostgreSQL (planned)
+- PostgreSQL
 - Django Channels + Redis (for WebSocket support)
