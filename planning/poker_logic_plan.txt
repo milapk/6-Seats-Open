@@ -1,0 +1,22 @@
+Typical Game Event Timeline:
+
+	User 1 joins -> GameModel 1 created:
+	User 1 -> WS connects: Gets centric seats view: Backend checks if enough players, theres not so it waits
+	User 2 join -> Joins GameModel 1:
+	User 2 -> WS connects: Gets centric seats view: User 1 gets new player join update via WS: Backend realises enough players and starts game
+
+	Game starts -> Assigns BB and SB and add to pot: 
+	Deal hands -> Betting starts(find BB + 1 and makes him current player to act; 1 min betting else folds and times out): repeat betting till everyone acted once and bets are equal or everyone checks:
+	Deal flop -> Betting starts(find BB + 1 and makes him current player to act; 1 min betting else folds and times out): repeat betting till everyone acted once and bets are equal or everyone checks:
+	Deal turn -> Betting starts(find BB + 1 and makes him current player to act; 1 min betting else folds and times out): repeat betting till everyone acted once and bets are equal or everyone checks:
+	Deal river -> Betting starts(find BB + 1 and makes him current player to act; 1 min betting else folds and times out): repeat betting till everyone acted once and bets are equal or everyone checks:
+	Showdown -> Finds winner: Distribute chips accordingly: 
+	Next round: check if enough players: initialise game and players
+	
+Anytime Event:
+	Timeout: If player disconnects or takes longer than 1min for actions, auto folds/checks: Everyone gets updated on the action
+	Leave game: Updates GameModel and removes from channel group for that game
+	Join game: Can occurs at any time except for User 1 and 2 since you need 2 playes to start 
+	Illegal move: If invalid action
+	Sync event: Syncs to game
+	
