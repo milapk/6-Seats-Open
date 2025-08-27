@@ -1,10 +1,12 @@
 import "../styles/PokerGame.css";
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
-import { Button } from "@mui/material";
+import { ACCESS_TOKEN } from "../constants";
+import { Button, IconButton, Slider, Box } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AutoCloseAlert from "../components/CustomAlerts";
 import api from "../api";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
 
 export default function PokerGame() {
     const [alertMessage, setAlertMessage] = useState("");
@@ -13,12 +15,21 @@ export default function PokerGame() {
     const [gameState, setGameState] = useState({
         stakes: { small: 0, big: 0 },
         num_of_players: 0,
-        players: []
+        players: [],
+    });
+    const [betAmount, setBetAmount] = useState(0);
+    const [maxBet, setMaxBet] = useState(500);
+    const [showSidebar, setShowSidebar] = useState(true);
+    const [windowSize, setWindowSize] = useState({
+        width: window.innerWidth,
+        height: window.innerHeight,
     });
 
     useEffect(() => {
         const access = localStorage.getItem(ACCESS_TOKEN);
-        const socket = new WebSocket(`${import.meta.env.VITE_WS_URL}/ws/poker/${access}/`);
+        const socket = new WebSocket(
+            `${import.meta.env.VITE_WS_URL}/ws/poker/${access}/`
+        );
 
         socketRef.current = socket;
 
@@ -28,11 +39,11 @@ export default function PokerGame() {
 
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            if (data.event === 'game_joined') {
+            if (data.event === "game_joined") {
                 updateGameState(data);
             }
-            
-            if (data.event === 'player_joined') {
+
+            if (data.event === "player_joined") {
                 updateGameState(data);
             }
         };
@@ -41,19 +52,30 @@ export default function PokerGame() {
             console.log("WebSocket connection closed");
         };
 
+        const handleResize = () => {
+            setWindowSize({
+                width: window.innerWidth,
+                height: window.innerHeight,
+            });
+        };
+
+        window.addEventListener("resize", handleResize);
+        handleResize(); // Initial check
+
         return () => {
             if (socketRef.current) {
                 socketRef.current.close();
             }
+            window.removeEventListener("resize", handleResize);
         };
     }, []);
 
     const updateGameState = (gameData) => {
         const transformedPlayers = [];
-        
+
         for (let position = 1; position <= 6; position++) {
             const seatData = gameData.data.seats[position];
-            
+
             if (seatData) {
                 transformedPlayers.push({
                     position: position,
@@ -61,18 +83,33 @@ export default function PokerGame() {
                     chips: seatData.chips,
                     playerId: seatData.id,
                     actualSeat: seatData.actual_seat,
-                    active: false
+                    active: false,
                 });
             }
         }
         setGameState({
             stakes: {
                 small: gameData.small_blind,
-                big: gameData.big_blind
+                big: gameData.big_blind,
             },
             num_of_players: gameData.num_of_players,
-            players: transformedPlayers
+            players: transformedPlayers,
         });
+    };
+
+    const handleAction = (action, amount = null) => {
+        if (
+            socketRef.current &&
+            socketRef.current.readyState === WebSocket.OPEN
+        ) {
+            socketRef.current.send(
+                JSON.stringify({
+                    event: "player_action",
+                    action: action,
+                    amount: amount || betAmount,
+                })
+            );
+        }
     };
 
     const handleLeaveGame = async (e) => {
@@ -91,6 +128,9 @@ export default function PokerGame() {
         }
     };
 
+    const isMobile = windowSize.width < 768 && windowSize.height < 600;
+    const showCompactUI = isMobile;
+
     return (
         <div id="game-root">
             <AutoCloseAlert
@@ -99,37 +139,270 @@ export default function PokerGame() {
                 duration={3000}
                 onClose={() => setAlertMessage("")}
             />
+
             <div id="game-container">
-                <div id="game-leave-button">
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        onClick={handleLeaveGame}
-                    >
-                        Leave
-                    </Button>
-                </div>                
+                <div id="game-header">
+                    <div className="table-info">
+                        Max | Stakes: {gameState.stakes.small}/
+                        {gameState.stakes.big} | {gameState.num_of_players}/6
+                    </div>
+                    <div id="game-leave-button">
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={handleLeaveGame}
+                            size="small"
+                        >
+                            Leave
+                        </Button>
+                    </div>
+                    {showCompactUI && (
+                        <IconButton
+                            className="mobile-menu-button"
+                            onClick={() => setShowSidebar(!showSidebar)}
+                        >
+                            {showSidebar ? <CloseIcon /> : <MenuIcon />}
+                        </IconButton>
+                    )}
+                </div>
+
                 <div id="game-poker-table">
                     {gameState.players.map((player) => (
-                        <div key={player.playerId} className={`seat seat-${player.position}`}>
-                            <div className={`player-circle ${player.active ? "active" : ""}`}></div>
+                        <div
+                            key={player.playerId}
+                            className={`seat seat-${player.position}`}
+                        >
+                            <div
+                                className={`player-circle ${
+                                    player.active ? "active" : ""
+                                }`}
+                            ></div>
                             <div id="player-name">{player.username}</div>
                             <div id="player-chips">${player.chips}</div>
                         </div>
                     ))}
                 </div>
-                
-                <div id="game-buttons">
-                    <Button className="action-btn fold-btn" variant="contained">
-                        Fold
-                    </Button>
-                    <Button className="action-btn call-btn" variant="contained">
-                        Call/Check
-                    </Button>
-                    <Button className="action-btn raise-btn" variant="contained">
-                        Bet/Raise
-                    </Button>
-                </div>
+                {!showCompactUI && (
+                    <div id="game-controls">
+                        <div className="bet-controls">
+                            <div className="bet-slider-container">
+                                <Box
+                                    sx={{
+                                        width: "100%",
+                                        maxWidth: 300,
+                                        margin: "0 auto",
+                                    }}
+                                >
+                                    <Slider
+                                        value={betAmount}
+                                        onChange={(e, newValue) =>
+                                            setBetAmount(newValue)
+                                        }
+                                        min={gameState.stakes.big}
+                                        max={maxBet}
+                                        step={gameState.stakes.big}
+                                        valueLabelDisplay="auto"
+                                        valueLabelFormat={(value) =>
+                                            `$${value}`
+                                        }
+                                    />
+                                </Box>
+                                <div className="bet-amount-display">
+                                    Bet: ${betAmount}
+                                </div>
+                            </div>
+
+                            {/* Quick Bet Buttons */}
+                            <div className="quick-bet-buttons">
+                                <Button
+                                    className="quick-bet-btn"
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() =>
+                                        setBetAmount(gameState.stakes.big * 2)
+                                    }
+                                >
+                                    2x BB
+                                </Button>
+                                <Button
+                                    className="quick-bet-btn"
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() =>
+                                        setBetAmount(gameState.stakes.big * 3)
+                                    }
+                                >
+                                    3x BB
+                                </Button>
+                                <Button
+                                    className="quick-bet-btn"
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() =>
+                                        setBetAmount(Math.floor(maxBet / 2))
+                                    }
+                                >
+                                    ½ Pot
+                                </Button>
+                                <Button
+                                    className="quick-bet-btn"
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => setBetAmount(maxBet)}
+                                >
+                                    Max
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="control-status">
+                            Current action:{" "}
+                            <span className="current-action">Your turn</span>
+                        </div>
+
+                        <div id="game-buttons">
+                            <Button
+                                className="action-btn fold-btn"
+                                variant="contained"
+                                onClick={() => handleAction("fold")}
+                            >
+                                Fold
+                            </Button>
+                            <Button
+                                className="action-btn call-btn"
+                                variant="contained"
+                                onClick={() => handleAction("call")}
+                            >
+                                Call
+                            </Button>
+                            <Button
+                                className="action-btn raise-btn"
+                                variant="contained"
+                                onClick={() => handleAction("raise")}
+                            >
+                                Raise
+                            </Button>
+                        </div>
+                    </div>
+                )}
+                {showCompactUI && showSidebar && (
+                    <div id="mobile-sidebar">
+                        <IconButton
+                            className="mobile-close-btn"
+                            onClick={() => setShowSidebar(false)}
+                            size="small"
+                        >
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+
+                        <div className="sidebar-content">
+                            {/* Status Indicator */}
+                            <div className="mobile-status">
+                                Your turn •{" "}
+                                <span className="mobile-current-action">
+                                    Action required
+                                </span>
+                            </div>
+
+                            <div className="bet-controls">
+                            <Box
+                                    sx={{
+                                        width: "100%",
+                                        maxWidth: 300,
+                                        margin: "0 auto",
+                                    }}
+                                >
+                                    <Slider
+                                        value={betAmount}
+                                        onChange={(e, newValue) =>
+                                            setBetAmount(newValue)
+                                        }
+                                        min={gameState.stakes.big}
+                                        max={maxBet}
+                                        step={gameState.stakes.big}
+                                        valueLabelDisplay="auto"
+                                        valueLabelFormat={(value) =>
+                                            `$${value}`
+                                        }
+                                    />
+                                </Box>
+                                <div className="bet-amount">
+                                    Bet: ${betAmount}
+                                </div>
+
+                                {/* Quick Bet Buttons */}
+                                <div className="mobile-quick-bets">
+                                    <Button
+                                        className="mobile-quick-bet-btn"
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() =>
+                                            setBetAmount(
+                                                gameState.stakes.big * 2
+                                            )
+                                        }
+                                    >
+                                        2x BB
+                                    </Button>
+                                    <Button
+                                        className="mobile-quick-bet-btn"
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() =>
+                                            setBetAmount(
+                                                gameState.stakes.big * 3
+                                            )
+                                        }
+                                    >
+                                        3x BB
+                                    </Button>
+                                    <Button
+                                        className="mobile-quick-bet-btn"
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() =>
+                                            setBetAmount(Math.floor(maxBet / 2))
+                                        }
+                                    >
+                                        ½ Pot
+                                    </Button>
+                                    <Button
+                                        className="mobile-quick-bet-btn"
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() => setBetAmount(maxBet)}
+                                    >
+                                        Max
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="action-buttons-mobile">
+                                <Button
+                                    className="action-btn fold-btn"
+                                    variant="contained"
+                                    onClick={() => handleAction("fold")}
+                                >
+                                    Fold
+                                </Button>
+                                <Button
+                                    className="action-btn call-btn"
+                                    variant="contained"
+                                    onClick={() => handleAction("call")}
+                                >
+                                    Call
+                                </Button>
+                                <Button
+                                    className="action-btn raise-btn"
+                                    variant="contained"
+                                    onClick={() => handleAction("raise")}
+                                >
+                                    Raise
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
