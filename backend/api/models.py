@@ -222,17 +222,18 @@ class GameModel(models.Model):
         index = all_seats.index(player_seat)
         rotated_seats = all_seats[index:] + all_seats[0: index]
         player_info = {}
-        print(rotated_seats)
+
         for i, seat in enumerate(rotated_seats):
             if seat in taken_seats:
                 seat_player = PlayerModel.objects.get(game=self.pk, seat_number=seat)
-                player_info[str(seat)]  = {
+                player_info[i+1]  = {
                     'username': seat_player.user.username, 
                     'chips': seat_player.chips_in_play,
-                    'id': seat_player.id
+                    'id': seat_player.id,
+                    'actual_seat': seat
                 }
             else:
-                player_info[str(seat)] = None
+                player_info[i+1] = None
 
         return player_info
 
