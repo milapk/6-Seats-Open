@@ -7,18 +7,21 @@ import AutoCloseAlert from "../components/CustomAlerts";
 import api from "../api";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 
 export default function PokerGame() {
     const [alertMessage, setAlertMessage] = useState("");
     const navigate = useNavigate();
     const socketRef = useRef(null);
     const [gameState, setGameState] = useState({
+        pot: 0,
         stakes: { small: 0, big: 0 },
         num_of_players: 0,
+        mainUser: { maxBet: 0 },
         players: [],
     });
     const [betAmount, setBetAmount] = useState(0);
-    const [maxBet, setMaxBet] = useState(500);
+    const [maxBet, setMaxBet] = useState(0);
     const [showSidebar, setShowSidebar] = useState(true);
     const [windowSize, setWindowSize] = useState({
         width: window.innerWidth,
@@ -60,7 +63,7 @@ export default function PokerGame() {
         };
 
         window.addEventListener("resize", handleResize);
-        handleResize(); // Initial check
+        handleResize();
 
         return () => {
             if (socketRef.current) {
@@ -71,12 +74,18 @@ export default function PokerGame() {
     }, []);
 
     const updateGameState = (gameData) => {
+        gameData = gameData.data;
         const transformedPlayers = [];
+        let mainUser = null;
 
         for (let position = 1; position <= 6; position++) {
-            const seatData = gameData.data.seats[position];
+            const seatData = gameData.seats[position];
 
             if (seatData) {
+                if (position === 1) {
+                    mainUser = seatData;
+                    console.log(mainUser);
+                }
                 transformedPlayers.push({
                     position: position,
                     username: seatData.username,
@@ -88,11 +97,21 @@ export default function PokerGame() {
             }
         }
         setGameState({
+            pot: 20, //not done
             stakes: {
                 small: gameData.small_blind,
                 big: gameData.big_blind,
             },
             num_of_players: gameData.num_of_players,
+            mainUser: { maxBet: mainUser.chips },
+            players: transformedPlayers,
+        });
+        setMaxBet(mainUser.chips);
+
+        console.log("Game state updated:", {
+            stakes: { small: gameData.small_blind, big: gameData.big_blind },
+            numPlayers: gameData.num_of_players,
+            mainUser: { maxBet: mainUser.chips },
             players: transformedPlayers,
         });
     };
@@ -128,7 +147,7 @@ export default function PokerGame() {
         }
     };
 
-    const isMobile = windowSize.width < 768 && windowSize.height < 600;
+    const isMobile = windowSize.width < 850 || windowSize.height < 500;
     const showCompactUI = isMobile;
 
     return (
@@ -143,19 +162,18 @@ export default function PokerGame() {
             <div id="game-container">
                 <div id="game-header">
                     <div className="table-info">
-                        Max | Stakes: {gameState.stakes.small}/
+                        6 Max | Stakes: {gameState.stakes.small}/
                         {gameState.stakes.big} | {gameState.num_of_players}/6
                     </div>
-                    <div id="game-leave-button">
-                        <Button
-                            variant="contained"
-                            color="secondary"
+                    <div id="game-leave-div">
+                        <IconButton
+                            className="game-leave-button"
                             onClick={handleLeaveGame}
-                            size="small"
                         >
-                            Leave
-                        </Button>
+                            <ExitToAppIcon></ExitToAppIcon>
+                        </IconButton>
                     </div>
+
                     {showCompactUI && (
                         <IconButton
                             className="mobile-menu-button"
@@ -203,16 +221,15 @@ export default function PokerGame() {
                                         step={gameState.stakes.big}
                                         valueLabelDisplay="auto"
                                         valueLabelFormat={(value) =>
-                                            `$${value}`
+                                            `£${value}`
                                         }
                                     />
                                 </Box>
                                 <div className="bet-amount-display">
-                                    Bet: ${betAmount}
+                                    Bet: £{betAmount}
                                 </div>
                             </div>
 
-                            {/* Quick Bet Buttons */}
                             <div className="quick-bet-buttons">
                                 <Button
                                     className="quick-bet-btn"
@@ -239,7 +256,9 @@ export default function PokerGame() {
                                     variant="outlined"
                                     size="small"
                                     onClick={() =>
-                                        setBetAmount(Math.floor(maxBet / 2))
+                                        setBetAmount(
+                                            Math.floor(gameState.pot / 2)
+                                        )
                                     }
                                 >
                                     ½ Pot
@@ -305,7 +324,7 @@ export default function PokerGame() {
                             </div>
 
                             <div className="bet-controls">
-                            <Box
+                                <Box
                                     sx={{
                                         width: "100%",
                                         maxWidth: 300,
@@ -322,12 +341,12 @@ export default function PokerGame() {
                                         step={gameState.stakes.big}
                                         valueLabelDisplay="auto"
                                         valueLabelFormat={(value) =>
-                                            `$${value}`
+                                            `£${value}`
                                         }
                                     />
                                 </Box>
                                 <div className="bet-amount">
-                                    Bet: ${betAmount}
+                                    Bet: £{betAmount}
                                 </div>
 
                                 {/* Quick Bet Buttons */}
@@ -361,7 +380,9 @@ export default function PokerGame() {
                                         variant="outlined"
                                         size="small"
                                         onClick={() =>
-                                            setBetAmount(Math.floor(maxBet / 2))
+                                            setBetAmount(
+                                                Math.floor(gameState.pot / 2)
+                                            )
                                         }
                                     >
                                         ½ Pot

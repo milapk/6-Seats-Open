@@ -8,7 +8,7 @@
 
 @media (max-width: 454px) or (max-height: 400px) {
     #game-root::before {
-        content: "Please increase your browser size to at least 455x508 to play";
+        content: "Please increase your browser size to at least 400x400 to play";
         position: fixed;
         top: 0;
         left: 0;
@@ -35,7 +35,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 5px;
-    padding: 20px 0px 20px 0px;
+    padding: 70px 0px 30px 0px;
     background: radial-gradient(
         circle at center,
         rgb(113, 43, 43),
@@ -47,15 +47,15 @@
 }
 #game-poker-table {
     position: relative;
-    width: 65%;
-    height: 70%;
+    width: 55%;
+    height: 75%;
     background: radial-gradient(
         circle at center,
         #1c6b3c 0%,
         #0e3a20 60%,
         #082312 100%
     );
-    border-radius: 120px;
+    border-radius: 300px;
     border: 15px solid #df8429ef;
     box-shadow: 0 0 0 3px #000, inset 0 0 30px rgb(0, 0, 0),
         0px 0px 50px rgba(0, 0, 0, 0.982);
@@ -80,6 +80,7 @@
     top: 85%;
     left: -90px;
     transform: translateY(-50%);
+    margin: 10px;
 }
 .seat-3 {
     top: 30%;
@@ -126,7 +127,7 @@
     width: 100%;
     border-radius: 5px;
     padding: 5px 0px 15px 0px;
-    top: 75px;
+    top: 60px;
     font-size: 12px;
     font-weight: 500;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
@@ -138,7 +139,7 @@
     background: linear-gradient(to bottom, #121218, #0a0a10);
     padding: 4px 0;
     width: 100%;
-    top: 100px;
+    top: 85px;
     border-radius: 5px;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
@@ -149,35 +150,49 @@
     border-top: none;
 }
 
-#game-leave-button {
+#game-leave-div {
     position: absolute;
-    right: 10px;
-    top: 10px;
+    right: 5px;
+    top: 5px;
+}
+
+.game-leave-button {
+    background: #ff0000 !important;
+    color: white !important;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border: 2px black solid;
 }
 
 #game-header {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    right: 10px;
+    top: 0px;
+    left: 0px;
+    right: 0px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
     z-index: 10;
 }
 
 .table-info {
-    background: rgba(0, 0, 0, 0.7);
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 14px;
+    position: relative;
+    left: 5px;
+    top: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.762);
+    height: 25px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 16px;
     color: #ccc;
     border: 1px solid #444;
 }
 
-@media (max-width: 768px) and (max-height: 600px) {
+@media (max-width: 850px) or (max-height: 500px) {
     .mobile-menu-button {
-        right: 10px;
+        right: 5px;
         top: 50px;
         background: #ff9900 !important;
         color: white !important;
@@ -185,8 +200,22 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         border: 2px black solid;
     }
+
+    #player-chips,
+    #player-name {
+        width: 100px;
+    }
 }
 
+@media (max-width: 600px) or (max-height: 450px) {
+    .table-info {
+        font-size: 11px;
+        padding: 0px 3px;
+        top: 0;
+        left: 0;
+        border-radius: 2px;
+    }
+}
 
 #mobile-sidebar {
     position: fixed;
@@ -200,7 +229,6 @@
     animation: slideUp 0.3s ease;
 }
 
-
 /* ===== GAME CONTROLS ===== */
 #game-controls {
     position: absolute;
@@ -210,9 +238,8 @@
     padding: 20px;
     border-radius: 5px;
     border: 2px solid #58514c;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 
-                0 0 0 1px #000,
-                inset 0 2px 8px rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px #000,
+        inset 0 2px 8px rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     z-index: 20;
 }
@@ -285,7 +312,7 @@
     border: none !important;
     border-radius: 4px !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4),
-                inset 0 2px 4px rgba(255, 255, 255, 0.1) !important;
+        inset 0 2px 4px rgba(255, 255, 255, 0.1) !important;
     transition: all 0.2s ease !important;
     min-width: 100px !important;
 }
@@ -293,7 +320,7 @@
 .action-btn:hover {
     transform: translateY(-3px) !important;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5),
-                inset 0 2px 4px rgba(255, 255, 255, 0.2) !important;
+        inset 0 2px 4px rgba(255, 255, 255, 0.2) !important;
 }
 
 .action-btn:active {
@@ -352,9 +379,15 @@
 }
 
 @keyframes pulseGlow {
-    0% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
-    50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
-    100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+    0% {
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+    }
 }
 
 .action-btn:focus {
@@ -373,7 +406,6 @@
     font-weight: bold;
 }
 
-
 /* ===== SIDEBAR ===== */
 #mobile-sidebar {
     position: fixed;
@@ -385,8 +417,7 @@
     z-index: 999;
     padding: 20px;
     animation: slideUp 0.3s ease;
-    box-shadow: 0 -3px 32px rgba(0, 0, 0, 0.8),
-                0 0 0 1px #000,
+    box-shadow: 0 -3px 32px rgba(0, 0, 0, 0.8), 0 0 0 1px #000;
 }
 
 .sidebar-content {
@@ -488,7 +519,7 @@
     border: none !important;
     border-radius: 12px !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4),
-                inset 0 2px 4px rgba(255, 255, 255, 0.1) !important;
+        inset 0 2px 4px rgba(255, 255, 255, 0.1) !important;
     transition: all 0.2s ease !important;
     min-width: auto !important;
 }
@@ -496,7 +527,7 @@
 .action-buttons-mobile .action-btn:hover {
     transform: translateY(-2px) !important;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5),
-                inset 0 2px 4px rgba(255, 255, 255, 0.2) !important;
+        inset 0 2px 4px rgba(255, 255, 255, 0.2) !important;
 }
 
 .action-buttons-mobile .action-btn:active {
@@ -538,12 +569,12 @@
 }
 
 @keyframes slideUp {
-    from { 
-        transform: translateY(100%); 
+    from {
+        transform: translateY(100%);
         opacity: 0;
     }
-    to { 
-        transform: translateY(0); 
+    to {
+        transform: translateY(0);
         opacity: 1;
     }
 }
