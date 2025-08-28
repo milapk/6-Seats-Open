@@ -181,11 +181,14 @@ export default function UserForm({ type }) {
                                 label="Username"
                                 color="primary"
                                 onChange={handleUsernameChange}
-                                sx={{width:'100%'}}
+                                sx={{ width: "100%" }}
                             ></TextField>
                         </div>
                         <div id="form-textfield">
-                            <FormControl variant="filled" sx={{width:'100%'}}>
+                            <FormControl
+                                variant="filled"
+                                sx={{ width: "100%" }}
+                            >
                                 <InputLabel htmlFor="filled-adornment-password">
                                     Password
                                 </InputLabel>
@@ -196,9 +199,7 @@ export default function UserForm({ type }) {
                                     endAdornment={
                                         <InputAdornment position="end">
                                             <IconButton
-                                                
                                                 onClick={handleShowPassword}
-                                                
                                             >
                                                 {showPassword ? (
                                                     <VisibilityOff />

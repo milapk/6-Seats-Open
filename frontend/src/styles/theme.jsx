@@ -18,9 +18,9 @@ const theme = createTheme({
     },
     typography: {
         button: {
-          textTransform: 'none'
-        }
-      },
+            textTransform: "none",
+        },
+    },
     components: {
         MuiTextField: {
             variants: [
@@ -39,9 +39,9 @@ const theme = createTheme({
                             transform: "translate(3px, 2px) scale(0.7)",
                         },
                         "& input": {
-                            textAlign: 'left',
+                            textAlign: "left",
                             paddingLeft: "4px",
-                            paddingBottom: '15px'
+                            paddingBottom: "15px",
                         },
                     },
                 },
@@ -51,7 +51,7 @@ const theme = createTheme({
             styleOverrides: {
                 root: {
                     "& fieldset": {
-                        borderColor: "#444", 
+                        borderColor: "#444",
                     },
                     "&:hover fieldset": {
                         borderColor: "#ffffff",

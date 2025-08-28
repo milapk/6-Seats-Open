@@ -22,7 +22,7 @@ export default function BuyInDialog({
     bigBlind,
 }) {
     const [buyIn, setBuyIn] = useState(0);
-    const [alertMessage, setAlertMessage] = useState('');
+    const [alertMessage, setAlertMessage] = useState("");
     const navigate = useNavigate();
 
     const handleJoinGame = async (e) => {
@@ -38,10 +38,12 @@ export default function BuyInDialog({
                 navigate("/game");
             }
         } catch (error) {
-            if (error.response){
+            if (error.response) {
                 setAlertMessage(error.response.data.error);
             } else {
-                setAlertMessage("Could not join a game. Please refresh or try again later!");
+                setAlertMessage(
+                    "Could not join a game. Please refresh or try again later!"
+                );
             }
         }
     };
