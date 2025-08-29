@@ -90,6 +90,7 @@ class GameModel(models.Model):
     dealer_position = models.PositiveIntegerField(default=0)
     community_cards = models.CharField(max_length=14, null=True)
     open_seats = models.CharField(default='123456', null=True)
+    cards = models.CharField(max_length=157, null=True)
 
     def _seat_add_sub(self, seat, num) -> int:
         """
@@ -250,6 +251,57 @@ class GameModel(models.Model):
             game_info['num_of_players'] = self.num_of_players
             game_info['seats'] = seats
         return game_info
+    
+    def _get_next_taken_seat(self, seat):
+        '''
+        Takes seat number and returns the next seat that is taken by a player
+
+        Return:
+            -integer: Next seat taken, or None
+        '''
+        for i in range(1,7):
+            new_seat = self._seat_add_sub(seat, 1)
+            player = PlayerModel.objects.filter(game=self.id, seat_number=new_seat)
+            if player:
+                return new_seat
+        return None
+    
+    def start_game(self):
+        '''
+        Starts game; find SB,BB,Dealers and deals cards;
+        '''
+        if self.num_of_players < 2:
+            return False
+        with transaction.atomic():
+            game = GameModel.objects.select_for_update().get(pk=self.pk)
+            pot = PotModel.objects.create(game=game, pot_money=0)
+            game.betting_stage = 0
+           
+            game.dealer_position = self._get_next_taken_seat(game.dealer_position)
+            sb_position = self._get_next_taken_seat(game.dealer_position)
+            bb_position =  self._get_next_taken_seat(game.dealer_position + 1)
+
+            sb_player = PlayerModel.objects.select_for_update().filter(game=game, seat_number=sb_position)
+            bb_player = PlayerModel.objects.select_for_update().filter(game=game, seat_number=bb_position)
+
+            sb_amount = min(sb_player.chips_in_play, game.table_type.small_blind)
+            sb_player.chips_in_play -= sb_amount
+            sb_player.current_bet = sb_amount
+            sb_player.total_round_bet = sb_amount
+            sb_player.save()
+            pot.add_chips(sb_amount)
+            pot.add(sb_player)
+
+            bb_amount = min(bb_player.chips_in_play, game.table_type.big_blind)
+            bb_player.chips_in_play -= bb_amount
+            bb_player.current_bet = bb_amount
+            bb_player.total_round_bet = bb_amount
+            bb_player.save()
+            pot.add_chips(bb_amount)
+            pot.add(bb_player)
+
+            game.save()
+            return True
 
 
 class PlayerModel(models.Model):
