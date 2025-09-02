@@ -266,12 +266,48 @@ class GameModel(models.Model):
                 return new_seat
         return None
     
+    def _create_deck(self):
+        '''
+        Creates and shuffles the deck.
+
+        Return:
+            -string: The shuffled deck of cards seperated by a comma.
+        '''
+        suits = ['c', 's', 'h', 'd']
+        values = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+        deck = []
+        for value in values:
+            for suit in suits:
+                card = value + suit
+                deck.append(card)
+
+        random.shuffle(deck)
+        deck = ','.join(deck)
+        return deck
+
+    def _deal_cards(self, game):
+        '''
+        Deals out hand cards to players.
+        '''
+        with transaction.atomic():
+            players = PlayerModel.objects.select_for_update().filter(game=self.id, is_folded=False)
+            deck = game.cards
+            for player in players:
+                player.cards = deck[0:5]
+                deck = deck[6:]
+                player.save()
+            game.cards = deck            
+    
     def start_game(self):
         '''
-        Starts game; find SB,BB,Dealers and deals cards;
+        Starts game; find SB,BB,Dealers and deals cards
+
+        Return: 
+            -integer: The current player to act or None if game not started.
         '''
         if self.num_of_players < 2:
-            return False
+            return None
+        
         with transaction.atomic():
             game = GameModel.objects.select_for_update().get(pk=self.pk)
             pot = PotModel.objects.create(game=game, pot_money=0)
@@ -281,27 +317,32 @@ class GameModel(models.Model):
             sb_position = self._get_next_taken_seat(game.dealer_position)
             bb_position =  self._get_next_taken_seat(game.dealer_position + 1)
 
-            sb_player = PlayerModel.objects.select_for_update().filter(game=game, seat_number=sb_position)
-            bb_player = PlayerModel.objects.select_for_update().filter(game=game, seat_number=bb_position)
+            game.cards = self._deal_cards()
+            self._deal_cards(game)
 
+            sb_player = PlayerModel.objects.select_for_update().get(game=game, seat_number=sb_position)
             sb_amount = min(sb_player.chips_in_play, game.table_type.small_blind)
             sb_player.chips_in_play -= sb_amount
             sb_player.current_bet = sb_amount
             sb_player.total_round_bet = sb_amount
             sb_player.save()
             pot.add_chips(sb_amount)
-            pot.add(sb_player)
+            pot.players.add(sb_player)
 
+            bb_player = PlayerModel.objects.select_for_update().get(game=game, seat_number=bb_position)
             bb_amount = min(bb_player.chips_in_play, game.table_type.big_blind)
             bb_player.chips_in_play -= bb_amount
             bb_player.current_bet = bb_amount
             bb_player.total_round_bet = bb_amount
             bb_player.save()
             pot.add_chips(bb_amount)
-            pot.add(bb_player)
+            pot.players.add(bb_player)
 
             game.save()
-            return True
+            pot.save()
+            next_player = self._get_next_taken_seat(bb_position)
+
+            return next_player
 
 
 class PlayerModel(models.Model):
