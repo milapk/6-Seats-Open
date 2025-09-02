@@ -1,6 +1,6 @@
 # ♠ 6 Seats Open ♠
 > ⚠ **Note**  
-> - This project is **under active development**.  
+> - This project is **under development**.  
 > - Most core features are not yet implemented.  
 > - Will only be optimised for **desktop browsers**.
 > - Once the MVP is complete, the app will be deployed and automatically updated via CI/CD pipelines, ensuring continuous delivery of new features and fixes.
@@ -18,7 +18,7 @@ Each poker game will run within a dedicated Channels consumer that coordinates p
 
 *This list may not be up-to-date. Last updated at: 23rd August 25
 
-## Planned Features 📌
+## Currently in the works 📌
 
 - **Lobby/Home**: Create and Join private tables.
 - **Poker Gameplay**: Real-time gameplay, betting logic, chip management and everything else.
