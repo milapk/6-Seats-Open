@@ -58,10 +58,9 @@ def leave_game(user):
 @database_sync_to_async
 def start_game(game):
     '''
-    Starts game
-
-    Return:
-        -boolean: True if started game, False if not enough players
+    Starts game and Returns seat number of the player to act or None if game could'nt start.
     '''
-    if game.num_of_players >= 2:
-        game.start_game()
+    seat_num = game.start_game()
+    if seat_num:
+        return get_player_channel(game.id, seat_num)
+    return None
