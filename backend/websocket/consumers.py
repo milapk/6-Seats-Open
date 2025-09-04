@@ -17,6 +17,11 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
                 'type': 'player_joined',
                 'user_id': self.user.id
             })
+            await set_player_channel(self.game.id, self.user, self.channel_name)
+
+            channel_name = await start_game(self.game)
+            if channel_name:
+                await self.channel_layer.send(channel_name, {'type': 'player_to_act'})
         else:
             await self.close()
     
@@ -41,4 +46,5 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
         else:
             await self.send(text_data=json.dumps({'event': 'player_left', 'user_id': user_id}))
 
-                
+    async def player_to_act(self, event):
+        await self.send(text_data=json.dumps({'event': 'Your turn to act'}))
