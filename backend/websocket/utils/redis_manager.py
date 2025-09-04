@@ -1,4 +1,5 @@
 import json
+from asgiref.sync import sync_to_async
 import redis.asyncio as redis
 from dotenv import load_dotenv
 import os
@@ -30,7 +31,8 @@ async def set_player_channel(game_id, user, channel_name):
     '''
     Sets the channel name to the seat number of the player
     '''
-    seat_num = (PlayerModel.objects.get(user=user)).seat_number
+    seat_num = await sync_to_async(PlayerModel.objects.get)(user=user)
+    seat_num = seat_num.seat_number
     key = f'game:{game_id}:seat:{seat_num}'
     r = await _get_redis()
     return await r.set(key, channel_name)
