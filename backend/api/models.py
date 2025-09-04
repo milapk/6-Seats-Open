@@ -91,6 +91,7 @@ class GameModel(models.Model):
     community_cards = models.CharField(max_length=14, null=True)
     open_seats = models.CharField(default='123456', null=True)
     cards = models.CharField(max_length=157, null=True)
+    game_started = models.BooleanField(default=False)
 
     def _seat_add_sub(self, seat, num) -> int:
         """
@@ -260,10 +261,10 @@ class GameModel(models.Model):
             -integer: Next seat taken, or None
         '''
         for i in range(1,7):
-            new_seat = self._seat_add_sub(seat, 1)
-            player = PlayerModel.objects.filter(game=self.id, seat_number=new_seat)
+            seat = self._seat_add_sub(seat, 1)
+            player = PlayerModel.objects.filter(game=self.id, seat_number=seat)
             if player:
-                return new_seat
+                return seat
         return None
     
     def _create_deck(self):
@@ -305,19 +306,20 @@ class GameModel(models.Model):
         Return: 
             -integer: The current player to act or None if game not started.
         '''
-        if self.num_of_players < 2:
+        if self.num_of_players < 2 or self.game_started:
             return None
         
         with transaction.atomic():
             game = GameModel.objects.select_for_update().get(pk=self.pk)
             pot = PotModel.objects.create(game=game, pot_money=0)
             game.betting_stage = 0
+            game.game_started = True
            
             game.dealer_position = self._get_next_taken_seat(game.dealer_position)
             sb_position = self._get_next_taken_seat(game.dealer_position)
-            bb_position =  self._get_next_taken_seat(game.dealer_position + 1)
+            bb_position =  self._get_next_taken_seat(sb_amount)
 
-            game.cards = self._deal_cards()
+            game.cards = self._create_deck()
             self._deal_cards(game)
 
             sb_player = PlayerModel.objects.select_for_update().get(game=game, seat_number=sb_position)
