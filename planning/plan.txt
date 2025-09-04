@@ -1,36 +1,36 @@
 ## Phase 1 – MVP Foundations
 - [DONE] Set up Django project with Django REST Framework.
-- [ ] Create `User` model (registration, login, JWT authentication).
+- [DONE] Create `User` model (registration, login, JWT authentication).
 - [DONE] Set up React frontend with login/register pages.
-- [ ] Connect frontend to backend API.
+- [DONE] Connect frontend to backend API.
 
 ## Phase 2 – Core Game Setup
-- [ ] Implement `Game` model (max players, chips in pot, betting stage, game code).
-- [ ] Implement `Player` model (links User to Game, chips, seat, folded/all-in states).
-- [ ] API endpoints to create/join a game.
-- [ ] Basic frontend poker table UI (static cards, seats).
+- [DONE] Implement `Game` model (max players, chips in pot, betting stage, game code).
+- [DONE] Implement `Player` model (links User to Game, chips, seat, folded/all-in states).
+- [DONE] Implement 'Pot' model (chips in pot and player in pot)
+- [DONE] API endpoints to create/join a game.
+- [DONE] Basic frontend poker table UI (static cards, seats).
 
 ## Phase 3 – Game Logic
-- [ ] Backend poker logic: deal cards, betting rounds, determine winner.
-- [ ] Update game state in DB and expose via API.
-- [ ] Frontend updates table based on API polling.
+- [WIP] Backend poker logic: deal cards, betting rounds, determine winner.
+- [DONE] Matchmaking system.
 
 ## Phase 4 – Real-time Multiplayer
-- [ ] Add WebSockets using Django Channels.
-- [ ] Sync game state in real time (bets, cards revealed).
+- [DONE] Add WebSockets using Django Channels.
+- [WIP] Sync game state in real time (bets, cards revealed).
 - [ ] Handle concurrency (turns, timeouts).
+- [WIP] Frontend updates via WebSockets.
 
-## Phase 5 – Extras & Polish
-- [ ] Matchmaking/lobby system.
+## Phase 5 – Extras/Future plan
 - [ ] Chips/currency system with leaderboard.
 - [ ] AI/bot players for solo play.
-- [ ] Deploy app (Docker + Render/Heroku).
+- [ ] Deploy app (Render/Heroku).
 - [ ] Add unit + integration tests.
 
 ---
 
 # Database Models
-
+Note: Initial plan for the DB models, more fields have been added since then.
 ## User
 - id (PK)
 - username
@@ -69,19 +69,16 @@
 
 CHATGPT PROMT FOR HELP:
 '''
-You are helping me build a programming project called **6 Seats Open**, a full-stack multiplayer poker web app.
+You are helping me build a programming project called 6 Seats Open, a full-stack multiplayer poker web app.
 When possible always explain to me what to do and why it works rather than giving me AI slop code.
 
 🛠 Tech stack:
-- Frontend: React
-- Backend: Django + Django REST Framework
-- Real-time: Django Channels (WebSockets)
+- Frontend: React + MUI
+- Backend: Django + Django REST Framework + Django Channels (WebSockets)
 - Database: PostgreSQL (or SQLite for dev)
-- Deployment: Docker + Render/Heroku
 
 🎯 Goals:
 - Show full-stack + real-time multiplayer skills
-- Project name: "6 Seats Open"
 
 📂 Repo structure:
 - /frontend → React
@@ -151,13 +148,5 @@ class PlayerModel(models.Model):
 4. Real-time Multiplayer (WebSockets, turns, timeouts)
 5. Extras & Polish (leaderboards, bots, deployment)
 
-Current Stage: Core Game Setup
-
-✅ Notes:
-- Users register/login, then join/create a poker game
-- Game max = 6 players
-- Player links User ↔ Game
-- Use JWT authentication
-- Each game has real-time betting & state sync
-- Tagline: "6 Seats Open – Real-time poker for six players, built with React & Django."
+Current Stage: In between Game Logic <-> Real-time Multiplayer
 '''
