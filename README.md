@@ -1,38 +1,39 @@
 # ♠ 6 Seats Open ♠
 > ⚠ **Note**  
 > - This project is **under development**.  
-> - Most core features are not yet implemented.  
-> - Will only be optimised for **desktop browsers**.
-> - Once the MVP is complete, the app will be deployed and automatically updated via CI/CD pipelines, ensuring continuous delivery of new features and fixes.
+> - Planned deployment with CI/CD pipelines, ensuring continuous delivery of new features and fixes.
 
-6 Seats Open is a full-stack multiplayer poker platform built with **React** and **Django** with Channel and Reddis to handle concurrency, synchronisation and game state. 
+6 Seats Open is a full-stack multiplayer poker platform built with **React** and **Django**.
 
-Each poker game will run within a dedicated Channels consumer that coordinates player actions and broadcasts updates to all connected clients in that game room.
+Each poker game runs within a dedicated Django Channels consumer that coordinates player actions and broadcasts updates to all connected clients in that game room.
 
 
 ## Current Features
 
 - **Authentication**: Login, Register, JWT-based authentication.
 - **Lobby/Home**: Browse and join public tables.
-- **Poker Gameplay**: Initial game set-up (WIP)
+- **Poker Gameplay**: Initial game set-up
 
-*This list may not be up-to-date. Last updated at: 23rd August 25
+**Currently working on:**
+-  THE ACTUAL GAME(Real-time gameplay, betting logic, chip management and everything else)
 
-## Currently in the works 📌
+***This list may not be up-to-date. Last updated at: 4/9/25**
+
+## Planned Features 📌
 
 - **Lobby/Home**: Create and Join private tables.
-- **Poker Gameplay**: Real-time gameplay, betting logic, chip management and everything else.
 - **Game History**: Player stats, match history, leaderboards via a profile page.
+- **AI Bot**: For 1v1??? 
 
 ## Tech Stack
 
 **Frontend**
 - React
 - Material UI (for styling)
-- WebSocket (for real-time gameplay)
 - Axios (for APIs)
 
 **Backend**
-- Django + Django REST Framework
+- Django
+- Django REST Framework (for APIs)
+- Django Channels + Redis (for WebSocket)
 - PostgreSQL
-- Django Channels + Redis (for WebSocket support)
