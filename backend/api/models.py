@@ -407,7 +407,8 @@ class PlayerModel(models.Model):
             player.all_in = False
             player.current_bet = 0
             player.total_round_bet = 0
+            player.cards = ''
 
             user.save(update_fields=['chips'])
             game.save(update_fields=['open_seats', 'num_of_players'])
-            player.save(update_fields=['chips_in_play', 'seat_number', 'game', 'is_folded', 'all_in', 'current_bet', 'total_round_bet'])
+            player.save(update_fields=['chips_in_play', 'seat_number', 'game', 'is_folded', 'all_in', 'current_bet', 'total_round_bet', 'cards'])
