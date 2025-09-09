@@ -1,4 +1,5 @@
 from channels.db import database_sync_to_async
+from asgiref.sync import sync_to_async
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken
 from api.models import PlayerModel, GameModel
@@ -55,12 +56,11 @@ def leave_game(user):
         return True
     return False
 
-@database_sync_to_async
-def start_game(game):
+async def start_game(game):
     '''
-    Starts game and Returns seat number of the player to act or None if game could'nt start.
+    Starts game and Returns channel name of the player to act or None if game could'nt start.
     '''
-    seat_num = game.start_game()
+    seat_num = await sync_to_async(game.start_game)()
     if seat_num:
-        return get_player_channel(game.id, seat_num)
+        return await get_player_channel(game.id, seat_num)
     return None
