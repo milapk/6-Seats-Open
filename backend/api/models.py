@@ -317,7 +317,7 @@ class GameModel(models.Model):
            
             game.dealer_position = self._get_next_taken_seat(game.dealer_position)
             sb_position = self._get_next_taken_seat(game.dealer_position)
-            bb_position =  self._get_next_taken_seat(sb_amount)
+            bb_position =  self._get_next_taken_seat(sb_position)
 
             game.cards = self._create_deck()
             self._deal_cards(game)
