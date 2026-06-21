@@ -34,14 +34,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 5px;
     padding: 70px 0px 30px 0px;
-    background: radial-gradient(
-        circle at center,
-        rgb(113, 43, 43),
-        rgb(125, 25, 25)
-    );
-    margin: 1% 1%;
     width: 100%;
     position: relative;
 }
@@ -52,13 +45,13 @@
     background: radial-gradient(
         circle at center,
         #1c6b3c 0%,
-        #0e3a20 60%,
+        #0e3a20 70%,
         #082312 100%
     );
     border-radius: 300px;
     border: 15px solid #df8429ef;
-    box-shadow: 0 0 0 3px #000, inset 0 0 30px rgb(0, 0, 0),
-        0px 0px 50px rgba(0, 0, 0, 0.982);
+    box-shadow: 0 0 0 3px #000, inset 0 0 20px rgba(0, 0, 0, 0.263),
+        0px 0px 80px rgba(10, 165, 64, 0.295);
 }
 
 .seat {
@@ -157,7 +150,7 @@
 }
 
 .game-leave-button {
-    background: #ff0000 !important;
+    background: #7d1919 !important;
     color: white !important;
     z-index: 1000;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
@@ -229,26 +222,48 @@
     animation: slideUp 0.3s ease;
 }
 
-/* ===== GAME CONTROLS ===== */
-#game-controls {
+#game-action-area {
     position: absolute;
-    bottom: 0px;
-    right: 0px;
-    background: linear-gradient(135deg, #1a1a2a 0%, #0c0c17 100%);
-    padding: 20px;
-    border-radius: 5px;
-    border: 2px solid #58514c;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px #000,
-        inset 0 2px 8px rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    bottom: 5px;
+    right: 5px;
     z-index: 20;
+}
+
+#player-hand-peek {
+    position: absolute;
+    bottom: calc(100% - 90px);
+    left: 50%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    transform: translateX(-50%);
+    transition: transform 0.28s ease;
+    z-index: 1;
+    cursor: pointer;
+}
+
+#player-hand-peek:hover,
+#player-hand-peek:focus-visible {
+    transform: translate(-50%, -100px);
+}
+
+.player-hole-card {
+    width: 100px;
+}
+
+
+#game-controls {
+    position: relative;
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 20;
+    background: #7d1919;
+    background-clip: padding-box;
 }
 
 .bet-controls {
     padding: 0px 15px 5px 15px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 12px;
-    border: 1px solid #2a2a3a;
 }
 
 .bet-slider-container {

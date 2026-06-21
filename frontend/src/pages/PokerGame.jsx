@@ -8,6 +8,13 @@ import api from "../api";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import aceOfClubs from "../assets/cards/Ac.svg";
+import twoOfDiamonds from "../assets/cards/2d.svg";
+
+const demoHoleCards = [
+    { src: aceOfClubs, alt: "Ace of clubs" },
+    { src: twoOfDiamonds, alt: "Two of diamonds" },
+];
 
 export default function PokerGame() {
     const [alertMessage, setAlertMessage] = useState("");
@@ -19,6 +26,7 @@ export default function PokerGame() {
         num_of_players: 0,
         mainUser: { maxBet: 0 },
         players: [],
+        communityCards: []
     });
     const [betAmount, setBetAmount] = useState(0);
     const [maxBet, setMaxBet] = useState(0);
@@ -43,6 +51,7 @@ export default function PokerGame() {
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.event === "game_joined") {
+                console.log(data);
                 updateGameState(data);
             }
 
@@ -201,7 +210,23 @@ export default function PokerGame() {
                     ))}
                 </div>
                 {!showCompactUI && (
-                    <div id="game-controls">
+                    <div id="game-action-area">
+                        <div
+                            id="player-hand-peek"
+                            tabIndex={0}
+                            aria-label="Your hole cards"
+                        >
+                            {demoHoleCards.map((card) => (
+                                <img
+                                    key={card.alt}
+                                    className="player-hole-card"
+                                    src={card.src}
+                                    alt={card.alt}
+                                />
+                            ))}
+                        </div>
+
+                        <div id="game-controls">
                         <div className="bet-controls">
                             <div className="bet-slider-container">
                                 <Box
@@ -301,6 +326,7 @@ export default function PokerGame() {
                             >
                                 Raise
                             </Button>
+                        </div>
                         </div>
                     </div>
                 )}
