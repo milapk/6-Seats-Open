@@ -48,3 +48,6 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
 
     async def player_to_act(self, event):
         await self.send(text_data=json.dumps({'event': 'Your turn to act'}))
+
+    async def send_cards(self, event):
+        await self.send(text_data=json.dumps({}))
