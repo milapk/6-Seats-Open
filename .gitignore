@@ -1,3 +1,4 @@
 .venv
+.claude
 backend/db.sqlite3
 backend/.env
