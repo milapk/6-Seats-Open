@@ -29,59 +29,37 @@ class SeatAssignmentTest(TestCase):
             username='plaryer6',
             password='testpass123'
         )
+        self.table_type = TableTypeModel.objects.create(
+            small_blind=10,
+            big_blind=20,
+            min_buy_in=100,
+            max_buy_in=1000
+        )
         self.game = GameModel.objects.create(
             open_seats='123456',
-            table_type=TableTypeModel.objects.create(
-                small_blind=10,
-                big_blind=20,
-                min_buy_in=100,
-                max_buy_in=1000
-            )
+            table_type=self.table_type
         )
+
+    def _join(self, user):
+        player = PlayerModel.objects.create(user=user)
+        player.join_game(self.game, user.pk, self.table_type.min_buy_in)
+        return self.game.get_assigned_seat(player.pk)
 
     def test_seat_assignment(self):
-        # Player 1 joins
-        player1 = PlayerModel.objects.create(
-            user=self.user1,
-            game=self.game
-        )
-        player2 = PlayerModel.objects.create(
-            user=self.user2,
-            game=self.game
-        )
-        player3 = PlayerModel.objects.create(
-            user=self.user3,
-            game=self.game
-        )
-        player4 = PlayerModel.objects.create(
-            user=self.user4,
-            game=self.game
-        )
-        player5 = PlayerModel.objects.create(
-            user=self.user5,
-            game=self.game
-        )
-        player6 = PlayerModel.objects.create(
-            user=self.user6,
-            game=self.game
-        )
+        seat1 = self._join(self.user1)
+        seat2 = self._join(self.user2)
+        seat3 = self._join(self.user3)
+        seat4 = self._join(self.user4)
+        seat5 = self._join(self.user5)
+        seat6 = self._join(self.user6)
 
-        seat1 = self.game.get_assigned_seat(player1.pk)
-        seat2 = self.game.get_assigned_seat(player2.pk)
-        seat3 = self.game.get_assigned_seat(player3.pk)
-        seat4 = self.game.get_assigned_seat(player4.pk)
-        seat5 = self.game.get_assigned_seat(player5.pk)
-        seat6 = self.game.get_assigned_seat(player6.pk)
-        
-
-        
         # Verify open seats updated
-        print(str(seat1), player1.user.username)
-        print(str(seat2), player2.user.username)
-        print(str(seat3), player3.user.username)
-        print(str(seat4), player4.user.username)
-        print(str(seat5), player5.user.username)
-        print(str(seat6), player6.user.username)
+        print(str(seat1), self.user1.username)
+        print(str(seat2), self.user2.username)
+        print(str(seat3), self.user3.username)
+        print(str(seat4), self.user4.username)
+        print(str(seat5), self.user5.username)
+        print(str(seat6), self.user6.username)
 
         self.assertNotIn(str(seat1), self.game.open_seats)
         self.assertNotIn(str(seat2), self.game.open_seats)
