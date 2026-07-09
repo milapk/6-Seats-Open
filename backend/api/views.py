@@ -68,9 +68,7 @@ class JoinGameView(APIView):
         if player.game is not None:
             return Response({'error': 'User already in a game, please leave game before joining another one', 'seat': player.seat_number}, status=status.HTTP_400_BAD_REQUEST)
         
-        game = game_matchmaking()
-        if not game:
-            game = GameModel.objects.create(table_type=table_type, num_of_players=1)
+        game = game_matchmaking(table_type)
 
         if player.join_game(game, user.pk, buy_in):
             seat = game.get_assigned_seat(player.pk)

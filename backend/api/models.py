@@ -155,9 +155,8 @@ class GameModel(models.Model):
             open_seats = [int(s) for s in game.open_seats]
             taken_seats = [seat for seat in range(1, 7) if seat not in open_seats]
             sides_count, side_seats  = self._get_seat_patterns(taken_seats) #Gets the number of players which are side by side and the seats they're sitting on.
-            num_players = self.num_of_players - 1
+            num_players = game.num_of_players - 1
             seat = None
-
             if num_players == 0:
                 seat = 1
 
@@ -369,6 +368,7 @@ class PlayerModel(models.Model):
         with transaction.atomic():
             user = CustomUser.objects.select_for_update().get(pk=user_pk)
             player = PlayerModel.objects.select_for_update().get(pk=self.pk)
+            game = GameModel.objects.select_for_update().get(pk=game.pk)
 
             if player.game:
                 return False
@@ -379,9 +379,11 @@ class PlayerModel(models.Model):
             user.chips -= buy_in
             player.game = game
             player.chips_in_play = buy_in
+            game.num_of_players += 1
 
             user.save(update_fields=['chips'])
             player.save(update_fields=['chips_in_play', 'game'])
+            game.save(update_fields=['num_of_players'])
             return True
 
     def leave_game(self, user_pk, game_pk):
