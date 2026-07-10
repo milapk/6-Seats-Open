@@ -2,3 +2,6 @@
 .claude
 backend/db.sqlite3
 backend/.env
+backend/api/__pycache__
+backend/core/__pycache__
+backend/websocket/__pycache__
