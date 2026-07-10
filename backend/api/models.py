@@ -1,5 +1,4 @@
 from django.db import models, transaction
-from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from datetime import timedelta
@@ -16,6 +15,7 @@ stage_choices = [
 
 CHIP_CLAIM_AMOUNT = 500
 
+
 def get_default_chips_claimed():
     """Returns timezone.now() - 1 hour (for immediate first claim)"""
     return timezone.now() - timedelta(hours=1)
@@ -27,7 +27,7 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
-    
+
     def can_claim_chips(self):
         '''
         Checks if the user is eligible to claim chips (1 hour cooldown)
@@ -36,7 +36,7 @@ class CustomUser(AbstractUser):
             -boolean: True if cooldown over else False.
         '''
         return timezone.now() >= self.chips_claimed + timedelta(hours=1)
-    
+
     def get_claim_cooldown(self):
         '''
         Return:
@@ -62,11 +62,13 @@ class CustomUser(AbstractUser):
                 return True
             return False
 
+
 class TableTypeModel(models.Model):
     big_blind = models.PositiveIntegerField()
     small_blind = models.PositiveIntegerField()
     min_buy_in = models.PositiveIntegerField()
     max_buy_in = models.PositiveIntegerField()
+
 
 class PotModel(models.Model):
     game = models.ForeignKey('GameModel', on_delete=models.CASCADE)
@@ -78,6 +80,7 @@ class PotModel(models.Model):
         '''Add chips to this pot'''
         self.pot_money = models.F('pot_money') + amount
         self.save(update_fields=['pot_money'])
+
 
 class GameModel(models.Model):
     table_type = models.ForeignKey('TableTypeModel', on_delete=models.CASCADE)
@@ -101,20 +104,24 @@ class GameModel(models.Model):
             -int: an integer between 1 and 6
         """
         new_seat = seat + num
-        while new_seat > 6: new_seat -= 6
-        while new_seat < 1: new_seat += 6
+        while new_seat > 6:
+            new_seat -= 6
+        while new_seat < 1:
+            new_seat += 6
         return new_seat
-    
+
     def _get_seat_patterns(self, taken_seats):
         """
         Used to identify where players are sitting.
 
         Return:
-            -int, list: the number of players sat side-by-side and the list of seats of which the players side-by-side are sitting on
+            -int, list: the number of players sat side-by-side and the list of seats
+                of which the players side-by-side are sitting on
         """
         side_by_side = []
         for seat in taken_seats:
-            if self._seat_add_sub(seat, 1) in taken_seats or self._seat_add_sub(seat, -1) in taken_seats:
+            if self._seat_add_sub(seat, 1) in taken_seats or self._seat_add_sub(
+                    seat, -1) in taken_seats:
                 side_by_side.append(seat)
         return len(side_by_side), side_by_side
 
@@ -125,7 +132,7 @@ class GameModel(models.Model):
         Return:
             -int: the number of players sitting next to the seat passed in the argument
         """
-        
+
         count = 0
         next = self._seat_add_sub(seat, 1)
         if next in taken_seats:
@@ -134,7 +141,7 @@ class GameModel(models.Model):
         if previous in taken_seats:
             count += 1
         return count
-    
+
     def get_assigned_seat(self, player_pk):
         '''
         Assigns optimal and logical seat based on the current player distribution.
@@ -143,18 +150,20 @@ class GameModel(models.Model):
             -int: seat number or None if table is full.
 
 
-        ## EASTER EGG: for who ever is reading this, quite rare that you're even seeing this since this is the 1/2 in this repo, 
+        ## EASTER EGG: for who ever is reading this, quite rare that you're even seeing
+        ## this since this is the 1/2 in this repo,
         ## btw great use of free will to inspect this beautifully written code,
-        ## but i do wonder why you are here, u must be extremely nosey. But either way im grateful u are here. do lmk if you find this, would be a great conversation
+        ## but i do wonder why you are here, u must be extremely nosey. But either way
+        ## im grateful u are here. do lmk if you find this, would be a great conversation
         '''
         with transaction.atomic():
             game = GameModel.objects.select_for_update().get(pk=self.pk)
             player = PlayerModel.objects.select_for_update().get(pk=player_pk)
 
-            
             open_seats = [int(s) for s in game.open_seats]
             taken_seats = [seat for seat in range(1, 7) if seat not in open_seats]
-            sides_count, side_seats  = self._get_seat_patterns(taken_seats) #Gets the number of players which are side by side and the seats they're sitting on.
+            # Gets the number of players which are side by side and the seats they're sitting on.
+            sides_count, side_seats = self._get_seat_patterns(taken_seats)
             num_players = game.num_of_players - 1
             seat = None
             if num_players == 0:
@@ -164,21 +173,30 @@ class GameModel(models.Model):
                 seat = self._seat_add_sub(taken_seats[0], 3)
 
             elif num_players == 2:
-                if sides_count == 2: #If 2 players are sitting side-by-side, it picks a seat opposite to one of the two players.
+                # If 2 players are sitting side-by-side, it picks a seat opposite to one
+                # of the two players.
+                if sides_count == 2:
                     seat = self._seat_add_sub(random.choices(taken_seats), 3)
-                else: #If the 2 players are sitting together with 1 free seat between them, then pick a seat so it creates a triangle.
-                    #If the 2 players are sitting opposite each other, it doesnt matter so it also performs this assignment.
+                else:
+                    # If the 2 players are sitting together with 1 free seat between
+                    # them, then pick a seat so it creates a triangle. If the 2 players
+                    # are sitting opposite each other, it doesnt matter so it also
+                    # performs this assignment.
                     max_seat = max(taken_seats)
                     seat = self._seat_add_sub(max_seat, 2)
                     if seat not in open_seats:
                         seat = self._seat_add_sub(max_seat, -2)
             elif num_players == 3:
-                if sides_count == 3: #If all players are setting side-by-side each other, picks the seat opposite to the middle player
+                if sides_count == 3:
+                    # If all players are setting side-by-side each other, picks the
+                    # seat opposite to the middle player
                     max_seat = max(taken_seats)
                     seat = self._seat_add_sub(max_seat, 2)
                     if seat not in open_seats:
                         seat = self._seat_add_sub(max_seat, -2)
-                elif sides_count == 2: #If 2 players are side-by-side with an lone player, then picks seat next to lone pla0yer.
+                # If 2 players are side-by-side with an lone player, then picks seat next
+                # to lone pla0yer.
+                elif sides_count == 2:
                     lone_player = [s for s in taken_seats if s not in side_seats][0]
                     seat = self._seat_add_sub(lone_player, 1)
                     if self._check_sides(seat, taken_seats) == 2:
@@ -188,38 +206,40 @@ class GameModel(models.Model):
             else:
                 seat = random.choice(open_seats)
 
-            if seat not in open_seats or seat == None: #Safe fallback in-case it all goes wrong, ofc this will NEVER happens, on my soul.
+            # Safe fallback in-case it all goes wrong, ofc this will NEVER happens, on my soul.
+            if seat not in open_seats or seat is None:
                 seat = open_seats[0]
-            
+
             self.open_seats = self.open_seats.replace(str(seat), '')
             self.save(update_fields=['open_seats'])
 
             player.seat_number = seat
             player.save(update_fields=['seat_number'])
-            
+
             return seat
-        
+
     def _get_centric_adjusted_seats(self, player_pk):
         '''
-        Returns the seat sequence 1-6 rotated so the current player is a position 1 ensuring the user always
-        sees themselves at the bottom middle seat.
+        Returns the seat sequence 1-6 rotated so the current player is a position 1
+        ensuring the user always sees themselves at the bottom middle seat.
         Needed so frontend UI know how to position players correctly.
 
         Arguments:
             -player_pk: PK number of users player model.
 
         Return:
-            -dictionary: Containing username and chips in game of players in their respective seat or None if seat empty;
+            -dictionary: Containing username and chips in game of players in their
+            respective seat or None if seat empty;
             eg {'1': {'username': 'user1', 'chips': 120}, '2': None ...}
         '''
         taken_seats = [seat for seat in range(1, 7) if str(seat) not in self.open_seats]
-        all_seats = [1,2,3,4,5,6]
+        all_seats = [1, 2, 3, 4, 5, 6]
         player = PlayerModel.objects.get(pk=player_pk)
         player_seat = player.seat_number
 
         if not player_seat or not player.game:
             return None
-        
+
         index = all_seats.index(player_seat)
         rotated_seats = all_seats[index:] + all_seats[0: index]
         player_info = {}
@@ -227,21 +247,22 @@ class GameModel(models.Model):
         for i, seat in enumerate(rotated_seats):
             if seat in taken_seats:
                 seat_player = PlayerModel.objects.get(game=self.pk, seat_number=seat)
-                player_info[i+1]  = {
-                    'username': seat_player.user.username, 
+                player_info[i + 1] = {
+                    'username': seat_player.user.username,
                     'chips': seat_player.chips_in_play,
                     'id': seat_player.id,
                     'actual_seat': seat
                 }
             else:
-                player_info[i+1] = None
+                player_info[i + 1] = None
 
         return player_info
 
     def get_game_info(self, player_pk):
         '''
         Return:
-            -dictioary: containing stakes, number of players, and (username + chips) for each player in-game.
+            -dictioary: containing stakes, number of players, and (username + chips)
+                for each player in-game.
         '''
         seats = self._get_centric_adjusted_seats(player_pk)
         game_info = {}
@@ -251,7 +272,7 @@ class GameModel(models.Model):
             game_info['num_of_players'] = self.num_of_players
             game_info['seats'] = seats
         return game_info
-    
+
     def _get_next_taken_seat(self, seat):
         '''
         Takes seat number and returns the next seat that is taken by a player
@@ -259,13 +280,13 @@ class GameModel(models.Model):
         Return:
             -integer: Next seat taken, or None
         '''
-        for i in range(1,7):
+        for i in range(1, 7):
             seat = self._seat_add_sub(seat, 1)
             player = PlayerModel.objects.filter(game=self.id, seat_number=seat)
             if player:
                 return seat
         return None
-    
+
     def _create_deck(self):
         '''
         Creates and shuffles the deck.
@@ -296,32 +317,33 @@ class GameModel(models.Model):
                 player.cards = deck[0:5]
                 deck = deck[6:]
                 player.save()
-            game.cards = deck            
-    
+            game.cards = deck
+
     def start_game(self):
         '''
         Starts game; find SB,BB,Dealers and deals cards
 
-        Return: 
+        Return:
             -integer: The current player to act or None if game not started.
         '''
         if self.num_of_players < 2 or self.game_started:
             return None
-        
+
         with transaction.atomic():
             game = GameModel.objects.select_for_update().get(pk=self.pk)
             pot = PotModel.objects.create(game=game, pot_money=0)
             game.betting_stage = 0
             game.game_started = True
-           
+
             game.dealer_position = self._get_next_taken_seat(game.dealer_position)
             sb_position = self._get_next_taken_seat(game.dealer_position)
-            bb_position =  self._get_next_taken_seat(sb_position)
+            bb_position = self._get_next_taken_seat(sb_position)
 
             game.cards = self._create_deck()
             self._deal_cards(game)
 
-            sb_player = PlayerModel.objects.select_for_update().get(game=game, seat_number=sb_position)
+            sb_player = PlayerModel.objects.select_for_update().get(
+                game=game, seat_number=sb_position)
             sb_amount = min(sb_player.chips_in_play, game.table_type.small_blind)
             sb_player.chips_in_play -= sb_amount
             sb_player.current_bet = sb_amount
@@ -330,7 +352,8 @@ class GameModel(models.Model):
             pot.add_chips(sb_amount)
             pot.players.add(sb_player)
 
-            bb_player = PlayerModel.objects.select_for_update().get(game=game, seat_number=bb_position)
+            bb_player = PlayerModel.objects.select_for_update().get(
+                game=game, seat_number=bb_position)
             bb_amount = min(bb_player.chips_in_play, game.table_type.big_blind)
             bb_player.chips_in_play -= bb_amount
             bb_player.current_bet = bb_amount
@@ -363,7 +386,8 @@ class PlayerModel(models.Model):
         Assigns the game to the player and updates chips after buy-in.
 
         Return:
-            -boolean: False if user is already in a game or if user has insufficient chips else True.
+            -boolean: False if user is already in a game or if user has insufficient
+                chips else True.
         '''
         with transaction.atomic():
             user = CustomUser.objects.select_for_update().get(pk=user_pk)
@@ -372,7 +396,7 @@ class PlayerModel(models.Model):
 
             if player.game:
                 return False
-            
+
             if user.chips < buy_in:
                 return False
 
@@ -413,4 +437,13 @@ class PlayerModel(models.Model):
 
             user.save(update_fields=['chips'])
             game.save(update_fields=['open_seats', 'num_of_players'])
-            player.save(update_fields=['chips_in_play', 'seat_number', 'game', 'is_folded', 'all_in', 'current_bet', 'total_round_bet', 'cards'])
+            player.save(
+                update_fields=[
+                    'chips_in_play',
+                    'seat_number',
+                    'game',
+                    'is_folded',
+                    'all_in',
+                    'current_bet',
+                    'total_round_bet',
+                    'cards'])

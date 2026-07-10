@@ -1,6 +1,14 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .utils.game import *
+from .utils.game import (
+    get_user,
+    user_in_game,
+    start_game,
+    get_game_info,
+    leave_game,
+)
+from .utils.redis_manager import set_player_channel
+
 
 class PokerGameConsumer(AsyncWebsocketConsumer):
 
@@ -24,15 +32,15 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
                 await self.channel_layer.send(channel_name, {'type': 'player_to_act'})
         else:
             await self.close()
-    
+
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
+        json.loads(text_data)
 
     async def player_joined(self, event):
-        game_info = await get_game_info(self.user) 
+        game_info = await get_game_info(self.user)
         if event.get('user_id') == self.user.id:
             await self.send(text_data=json.dumps({'event': 'game_joined', 'data': game_info}))
         else:

@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from api.models import GameModel, PlayerModel, TableTypeModel
 
+
 class SeatAssignmentTest(TestCase):
     def setUp(self):
         self.user1 = get_user_model().objects.create_user(
@@ -10,7 +11,7 @@ class SeatAssignmentTest(TestCase):
             password='testpass123'
         )
         self.user2 = get_user_model().objects.create_user(
-            username='playerr2', 
+            username='playerr2',
             password='testpass123'
         )
         self.user3 = get_user_model().objects.create_user(

@@ -1,6 +1,12 @@
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.urls import path
-from .views import *
+from .views import (
+    RegisterView,
+    HomePageDataView,
+    ClaimChipsView,
+    JoinGameView,
+    LeaveGameView,
+)
 
 urlpatterns = [
     path('obtain-token/', TokenObtainPairView.as_view(), name='obtain_token'),

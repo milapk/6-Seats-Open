@@ -3,34 +3,46 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Count
-from .serializers import *
+from .serializers import RegisterSerialier
 from .utils import get_jwt_tokens, game_matchmaking
-from .models import *
+from .models import PlayerModel, TableTypeModel, CustomUser
+
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
+
     def post(self, request, format=None):
         serializer = RegisterSerialier(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            player = PlayerModel.objects.create(user=user)
+            PlayerModel.objects.create(user=user)
             refresh, access = get_jwt_tokens(user)
-            return Response({'refresh': refresh, 'access': access, 'chips': user.chips}, status=status.HTTP_201_CREATED)
+            return Response({'refresh': refresh, 'access': access,
+                            'chips': user.chips}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class HomePageDataView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, format=None):
         user = request.user
         data = (TableTypeModel.objects.annotate(
             game_count=Count('gamemodel', distinct=True),
             total_players=Count('gamemodel__playermodel', distinct=True)
-            ).values('big_blind', 'small_blind', 'min_buy_in','game_count', 'total_players'))
-        data = [{'big_blind': item['big_blind'], 'small_blind': item['small_blind'],'buy_in': item['min_buy_in'],'games': item['game_count'], 'players': item['total_players']} for item in data]
-        return Response({'table_data': data, 'chips': user.chips, 'username': user.username}, status=status.HTTP_200_OK)
-    
+        ).values('big_blind', 'small_blind', 'min_buy_in', 'game_count', 'total_players'))
+        data = [{'big_blind': item['big_blind'],
+                 'small_blind': item['small_blind'],
+                 'buy_in': item['min_buy_in'],
+                 'games': item['game_count'],
+                 'players': item['total_players']} for item in data]
+        return Response({'table_data': data, 'chips': user.chips,
+                        'username': user.username}, status=status.HTTP_200_OK)
+
+
 class ClaimChipsView(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request, format=None):
         user = request.user
         if user.claim_chips():
@@ -39,35 +51,47 @@ class ClaimChipsView(APIView):
         else:
             cool_down = user.get_claim_cooldown()
             return Response({'cool_down': cool_down}, status=status.HTTP_406_NOT_ACCEPTABLE)
-        
+
+
 class JoinGameView(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request, format=None):
         user = request.user
         small_blind = request.data.get('small_blind')
         if not small_blind:
-            return Response({'error': 'Request must contain "small_blind"'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Request must contain "small_blind"'},
+                            status=status.HTTP_400_BAD_REQUEST)
         big_blind = request.data.get('big_blind')
         if not big_blind:
-            return Response({'error': 'Request must contain "big_blind"'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Request must contain "big_blind"'},
+                            status=status.HTTP_400_BAD_REQUEST)
         buy_in = request.data.get('buy_in')
         if not buy_in:
-            return Response({'error': 'Request must contain "buy_in"'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Request must contain "buy_in"'},
+                            status=status.HTTP_400_BAD_REQUEST)
         elif buy_in > user.chips:
-            return Response({'error': f'Not enough chips', 'available': user.chips, 'requested': buy_in}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({'error': 'Not enough chips', 'available': user.chips,
+                            'requested': buy_in}, status=status.HTTP_400_BAD_REQUEST)
+
         table_type = TableTypeModel.objects.get(small_blind=small_blind, big_blind=big_blind)
         if not table_type:
-            return Response({'error': 'Games with stakes given do not exist'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Games with stakes given do not exist'},
+                            status=status.HTTP_400_BAD_REQUEST)
         elif table_type.min_buy_in > buy_in:
-            return Response({'error': f'Buy in must be greater than {table_type.min_buy_in}'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f'Buy in must be greater than {table_type.min_buy_in}'},
+                            status=status.HTTP_400_BAD_REQUEST)
         elif table_type.max_buy_in < buy_in:
-            return Response({'error': f'Buy in must be less than {table_type.max_buy_in}'}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({'error': f'Buy in must be less than {table_type.max_buy_in}'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         player = PlayerModel.objects.get(user=user)
         if player.game is not None:
-            return Response({'error': 'User already in a game, please leave game before joining another one', 'seat': player.seat_number}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({
+                'error': 'User already in a game, please leave game before joining another one',
+                'seat': player.seat_number,
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         game = game_matchmaking(table_type)
 
         if player.join_game(game, user.pk, buy_in):
@@ -75,17 +99,19 @@ class JoinGameView(APIView):
             game_info = game.get_game_info(player.pk)
             if seat:
                 return Response(game_info, status=status.HTTP_200_OK)
-        return Response({'error': f'Unable to join. Try again'}, status=status.HTTP_400_BAD_REQUEST)
-        
+        return Response({'error': 'Unable to join. Try again'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LeaveGameView(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request, format=None):
         user = request.user
         player = PlayerModel.objects.get(user=user)
         game = player.game
         if not game:
-            return Response({'error': 'Leave game failed since player not in any game'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Leave game failed since player not in any game'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         player.leave_game(user.pk, game.pk)
         return Response({'success': f'Left Game:{game.id} successfully'}, status=status.HTTP_200_OK)

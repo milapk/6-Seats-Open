@@ -2,8 +2,9 @@ from channels.db import database_sync_to_async
 from asgiref.sync import sync_to_async
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken
-from api.models import PlayerModel, GameModel
-from .redis_manager import *
+from api.models import PlayerModel
+from .redis_manager import get_player_channel
+
 
 @database_sync_to_async
 def get_user(token):
@@ -17,7 +18,8 @@ def get_user(token):
         return auth.get_user(validated_token=token)
     except InvalidToken:
         return None
-    
+
+
 @database_sync_to_async
 def user_in_game(user):
     '''
@@ -28,6 +30,7 @@ def user_in_game(user):
     if player.game:
         return player.game
     return None
+
 
 @database_sync_to_async
 def get_game_info(user):
@@ -40,6 +43,7 @@ def get_game_info(user):
     if game:
         return game.get_game_info(player.pk)
     return None
+
 
 @database_sync_to_async
 def leave_game(user):
@@ -55,6 +59,7 @@ def leave_game(user):
         player.leave_game
         return True
     return False
+
 
 async def start_game(game):
     '''
