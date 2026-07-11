@@ -1,3 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+    --font-sans: "Poppins", sans-serif;
+
+    /* near-black, faint green-black tint instead of flat #000 */
+    --color-background: #0a0d0c;
+    --color-foreground: #eeefec;
+    --color-muted: #8b9691;
+    --color-muted-2: #5f6864;
+
+    --color-primary: #eeefec;
+    --color-primary-foreground: #0a0d0c;
+
+    --color-secondary: #1b211f;
+    --color-secondary-foreground: #eeefec;
+
+    /* muted, desaturated gold — refined accent, not a bright gradient */
+    --color-accent: #c7a24a;
+    --color-accent-foreground: #14100a;
+
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-ring: #c7a24a;
+
+    /* flat, desaturated felt tone — used sparingly, no radial gradients */
+    --color-felt: #16211c;
+    --color-panel: #121614;
+    --color-panel-alt: #171c19;
+}
+
 #root,
 html,
 body {
@@ -5,22 +35,23 @@ body {
     padding: 0;
     height: 100%;
     width: 100%;
-    background-color: black;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
     font-family: "Poppins", sans-serif;
 }
 
 .button {
     width: 100%;
-    background: linear-gradient(to bottom, #ffcc00, #b38600);
-    border-radius: 6px;
-    color: #000;
-    font-weight: bold;
+    background-color: var(--color-accent);
+    border-radius: 8px;
+    color: var(--color-accent-foreground);
+    font-weight: 600;
     padding: 8px 16px;
-    box-shadow: 0 3px #806600;
-    transition: transform 0.1s;
+    transition:
+        background-color 0.15s ease,
+        transform 0.1s ease;
 }
 
 .button:hover {
-    transform: scale(1.02) perspective(1px);
-    box-shadow: 0 5px #665200;
+    background-color: #d4b05e;
 }

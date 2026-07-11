@@ -1,16 +1,16 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Dialog,
-    DialogTitle,
     DialogContent,
-    DialogActions,
-    Button,
-    TextField,
-    Slider,
-} from "@mui/material";
-import { useState } from "react";
-import "../styles/BuyInDialog.css";
+    DialogHeader,
+    DialogFooter,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import api from "../api.js";
-import { useNavigate } from "react-router-dom";
 import AutoCloseAlert from "./CustomAlerts.jsx";
 
 export default function BuyInDialog({
@@ -25,7 +25,7 @@ export default function BuyInDialog({
     const [alertMessage, setAlertMessage] = useState("");
     const navigate = useNavigate();
 
-    const handleJoinGame = async (e) => {
+    const handleJoinGame = async () => {
         try {
             const response = await api.post("/api/join-game/", {
                 big_blind: bigBlind,
@@ -34,7 +34,6 @@ export default function BuyInDialog({
             });
 
             if (response.status === 200) {
-                console.log(response.data.success);
                 navigate("/game");
             }
         } catch (error) {
@@ -49,52 +48,44 @@ export default function BuyInDialog({
     };
 
     return (
-        <Dialog open={open} onClose={onClose}>
+        <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
             <AutoCloseAlert
                 message={alertMessage}
                 severity="error"
                 duration={3000}
                 onClose={() => setAlertMessage("")}
             />
-            <DialogTitle id="dialog-title">Enter Buy-In</DialogTitle>
             <DialogContent>
-                <div id="dialog-content">
-                    <div id="dialog-items">Select amount: £{buyIn}</div>
+                <DialogHeader>
+                    <DialogTitle>Enter Buy-In</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col gap-4">
+                    <div className="text-sm text-muted">
+                        Select amount: £{buyIn}
+                    </div>
                     <Slider
-                        id="dialog-items"
-                        value={buyIn}
-                        onChange={(e, newValue) => setBuyIn(newValue)}
-                        color="primary"
-                        size="small"
+                        value={[buyIn]}
+                        onValueChange={([newValue]) => setBuyIn(newValue)}
                         min={minBuyIn}
                         max={maxBuyIn}
                         step={10}
-                    ></Slider>
-                    <TextField
-                        fullWidth
-                        id="dialog-items"
-                        label="Or enter exact amount"
+                    />
+                    <Input
                         type="number"
+                        placeholder="Or enter exact amount"
                         value={buyIn}
-                        variant="filled"
-                        size="small"
-                        onChange={(e) => setBuyIn(e.target.value)}
-                    ></TextField>
+                        onChange={(e) => setBuyIn(Number(e.target.value))}
+                    />
                 </div>
+                <DialogFooter>
+                    <Button variant="outline" size="sm" onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleJoinGame}>
+                        Join Game
+                    </Button>
+                </DialogFooter>
             </DialogContent>
-            <DialogActions>
-                <Button variant="contained" color="secondary" onClick={onClose}>
-                    Cancel
-                </Button>
-                <Button
-                    onClick={handleJoinGame}
-                    className="button"
-                    variant="contained"
-                    color="secondary"
-                >
-                    Join Game
-                </Button>
-            </DialogActions>
         </Dialog>
     );
 }

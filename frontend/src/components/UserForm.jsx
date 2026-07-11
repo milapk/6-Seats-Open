@@ -1,22 +1,15 @@
 import { useState } from "react";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
-import {
-    Button,
-    TextField,
-    ToggleButton,
-    ToggleButtonGroup,
-    FormControl,
-    InputLabel,
-    InputAdornment,
-    IconButton,
-    FilledInput,
-} from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import CustomAlerts from "./CustomAlerts";
 import { useNavigate } from "react-router-dom";
 import "../styles/UserForm.css";
 import api from "../api.js";
-import formImg from "../assets/191.jpg";
+import formImg from "../assets/poker-image.jpg";
 
 export default function UserForm({ type }) {
     const title = type === "LOGIN" ? "Login" : "Register";
@@ -51,7 +44,7 @@ export default function UserForm({ type }) {
         }
     };
 
-    const handleUserFormSumbition = async (e) => {
+    const handleFormSubmit = async () => {
         if (password === "" && username === "") {
             setAlertMessage("Please enter both Username and Password!");
             return;
@@ -89,22 +82,16 @@ export default function UserForm({ type }) {
         }
     };
 
-    const handleToggleChange = (e, newMode) => {
-        if (newMode !== null) {
+    const handleToggleChange = (newMode) => {
+        if (newMode !== null && newMode !== "") {
             setAuthMode(newMode);
+            if (newMode === "LOGIN") goToLogin();
+            if (newMode === "REGISTER") goToRegister();
         }
     };
 
     const handleShowPassword = () => {
         setShowPassword((show) => !show);
-    };
-
-    const handleMouseDownPassword = (event) => {
-        event.preventDefault();
-    };
-
-    const handleMouseUpPassword = (event) => {
-        event.preventDefault();
     };
 
     const handleUsernameChange = (e) => {
@@ -115,109 +102,77 @@ export default function UserForm({ type }) {
         setPassword(e.target.value);
     };
 
-    const goToLogin = (e) => {
+    const goToLogin = () => {
         if (type !== "LOGIN") {
             navigate("/login");
         }
     };
 
-    const goToRegister = (e) => {
+    const goToRegister = () => {
         if (type !== "REGISTER") {
             navigate("/register");
         }
     };
     return (
-        <div id="user-form-root">
+        <div id="auth-root">
             <CustomAlerts
                 message={alertMessage}
                 severity="error"
                 duration={3000}
                 onClose={() => setAlertMessage("")}
             />
-            <div id="form-container">
-                <div id="container-left">
-                    <img id="img" src={formImg} />
+            <div className="auth-card">
+                <div className="auth-hero">
+                    <img className="auth-hero-image" src={formImg} />
                 </div>
-                <div id="container-right">
-                    <div id="container-switch-page">
-                        <ToggleButtonGroup
+                <div className="auth-panel">
+                    <div className="auth-mode-toggle">
+                        <ToggleGroup
+                            type="single"
                             value={authMode}
-                            exclusive
-                            onChange={handleToggleChange}
-                            sx={{
-                                width: "100%",
-                                "& .MuiToggleButton-root": {
-                                    flex: 1,
-                                    border: "1px solid #ccc",
-                                    borderRadius: 0,
-                                    color: "white",
-                                    backgroundColor: "#1e2b36ba",
-                                    "&.Mui-selected": {
-                                        backgroundColor: "#4a85b8",
-                                        color: "white",
-                                    },
-                                    "&:hover": {
-                                        backgroundColor: "#3a5a7f",
-                                    },
-                                },
-                            }}
+                            onValueChange={handleToggleChange}
                         >
-                            <ToggleButton value="LOGIN" onClick={goToLogin}>
+                            <ToggleGroupItem value="LOGIN">
                                 LOGIN
-                            </ToggleButton>
-                            <ToggleButton
-                                value="REGISTER"
-                                onClick={goToRegister}
-                            >
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="REGISTER">
                                 REGISTER
-                            </ToggleButton>
-                        </ToggleButtonGroup>
+                            </ToggleGroupItem>
+                        </ToggleGroup>
                     </div>
-                    <div id="container-form">
-                        <div id="form-textfield">
-                            <TextField
-                                variant="filled"
-                                size="small"
-                                label="Username"
-                                color="primary"
+                    <div className="auth-fields">
+                        <div className="auth-field">
+                            <Label htmlFor="username">Username</Label>
+                            <Input
+                                id="username"
                                 onChange={handleUsernameChange}
-                                sx={{ width: "100%" }}
-                            ></TextField>
+                            />
                         </div>
-                        <div id="form-textfield">
-                            <FormControl
-                                variant="filled"
-                                sx={{ width: "100%" }}
-                            >
-                                <InputLabel htmlFor="filled-adornment-password">
-                                    Password
-                                </InputLabel>
-                                <FilledInput
-                                    id="filled-adornment-password"
+                        <div className="auth-field">
+                            <Label htmlFor="password">Password</Label>
+                            <div className="auth-password-field relative">
+                                <Input
+                                    id="password"
                                     onChange={handlePasswordChange}
                                     type={showPassword ? "text" : "password"}
-                                    endAdornment={
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                onClick={handleShowPassword}
-                                            >
-                                                {showPassword ? (
-                                                    <VisibilityOff />
-                                                ) : (
-                                                    <Visibility />
-                                                )}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    }
+                                    className="pr-10"
                                 />
-                            </FormControl>
+                                <button
+                                    type="button"
+                                    onClick={handleShowPassword}
+                                    className="auth-password-toggle absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                                >
+                                    {showPassword ? (
+                                        <EyeOff size={18} />
+                                    ) : (
+                                        <Eye size={18} />
+                                    )}
+                                </button>
+                            </div>
                         </div>
                         <Button
-                            id="form-sumbit"
-                            className="button"
-                            variant="contained"
-                            color="secondary"
-                            onClick={handleUserFormSumbition}
+                            className="auth-submit-button"
+                            onClick={handleFormSubmit}
                         >
                             {title}
                         </Button>

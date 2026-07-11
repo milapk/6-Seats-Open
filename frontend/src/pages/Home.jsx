@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import PersonIcon from "@mui/icons-material/Person";
-import { Button } from "@mui/material";
+import { User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import AutoCloseAlert from "../components/CustomAlerts.jsx";
 import BuyInDialog from "../components/BuyInDialog.jsx";
 import api from "../api.js";
@@ -50,7 +50,7 @@ export default function Home() {
         }
     };
 
-    const handleDialognOpen = async (smallBlind, bigBlind) => {
+    const handleDialogOpen = async (smallBlind, bigBlind) => {
         setBigBlind(bigBlind);
         setSmallBlind(smallBlind);
         setDialogOpen(true);
@@ -71,19 +71,19 @@ export default function Home() {
                 duration={3000}
                 onClose={() => setAlertMessage("")}
             />
-            <div id="table-container">
-                <h1 id="table-title">Browse and Join Tables</h1>
+            <div className="home-table-panel">
+                <h1 className="home-table-title">Browse and Join Tables</h1>
 
-                <div id="tables-header">
-                    <div id="tables-header-stakes-column">Stakes</div>
-                    <div id="tables-header-column">Buy-In</div>
-                    <div id="tables-header-column">Tables</div>
-                    <div id="tables-header-column">Players</div>
-                    <div id="tables-header-column">Action</div>
+                <div className="home-table-header">
+                    <div className="home-table-header-cell">Stakes</div>
+                    <div className="home-table-header-cell">Buy-In</div>
+                    <div className="home-table-header-cell">Tables</div>
+                    <div className="home-table-header-cell">Players</div>
+                    <div className="home-table-header-cell">Action</div>
                 </div>
-                <div id="tables-rows">
+                <div className="home-table-rows">
                     {tableData.map((table, index) => (
-                        <div key={index} className="table-row">
+                        <div key={index} className="home-table-row">
                             <div>
                                 {numeral(table.small_blind).format("0,0")}/
                                 {numeral(table.big_blind).format("0,0")}
@@ -93,11 +93,9 @@ export default function Home() {
                             <div>{numeral(table.players).format("0,0")}</div>
                             <div>
                                 <Button
-                                    variant="contained"
-                                    color="secondary"
-                                    className="button"
+                                    size="sm"
                                     onClick={() =>
-                                        handleDialognOpen(
+                                        handleDialogOpen(
                                             table.small_blind,
                                             table.big_blind
                                         )
@@ -110,40 +108,25 @@ export default function Home() {
                     ))}
                 </div>
             </div>
-            <div id="sidebar">
-                <div id="sidebar-profile">
-                    <PersonIcon></PersonIcon>
-                    <div id="sidebar-chips">Chips: £{playerChip}</div>
+            <div className="home-sidebar">
+                <div className="home-sidebar-profile">
+                    <User />
+                    <div className="home-sidebar-chips">
+                        Chips: £{playerChip}
+                    </div>
                 </div>
-                <div id="sidebar-private">
+                <div className="home-sidebar-private">
                     <div>Private tables</div>
-                    <div id="sidebar-buttons">
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            className="button"
-                        >
-                            Join private table
-                        </Button>
+                    <div className="home-sidebar-button-group">
+                        <Button size="sm">Join private table</Button>
                     </div>
 
-                    <div id="sidebar-buttons">
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            className="button"
-                        >
-                            Create private table
-                        </Button>
+                    <div className="home-sidebar-button-group">
+                        <Button size="sm">Create private table</Button>
                     </div>
                 </div>
-                <div id="sidebar-claim">
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        className="button"
-                        onClick={handleClaimChips}
-                    >
+                <div className="home-sidebar-claim">
+                    <Button size="sm" onClick={handleClaimChips}>
                         Claim chips
                     </Button>
                 </div>

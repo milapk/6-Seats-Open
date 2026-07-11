@@ -1,10 +1,5 @@
-import React from "react";
-import Snackbar from "@mui/material/Snackbar";
-import MuiAlert from "@mui/material/Alert";
-
-const Alert = React.forwardRef(function Alert(props, ref) {
-    return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-});
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export default function AutoCloseAlert({
     message,
@@ -12,16 +7,15 @@ export default function AutoCloseAlert({
     duration = 3000,
     onClose,
 }) {
-    return (
-        <Snackbar
-            open={Boolean(message)}
-            autoHideDuration={duration}
-            onClose={onClose}
-            anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        >
-            <Alert onClose={onClose} severity={severity} sx={{ width: "100%" }}>
-                {message}
-            </Alert>
-        </Snackbar>
-    );
+    useEffect(() => {
+        if (!message) return;
+        const toastFn = severity === "success" ? toast.success : toast.error;
+        toastFn(message, {
+            duration,
+            onDismiss: onClose,
+            onAutoClose: onClose,
+        });
+    }, [message]);
+
+    return null;
 }

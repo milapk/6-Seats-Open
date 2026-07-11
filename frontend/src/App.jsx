@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ThemeProvider } from "@mui/material";
-import theme from "./styles/theme";
+import { Toaster } from "@/components/ui/sonner";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
@@ -16,7 +15,8 @@ function Logout() {
 
 function App() {
     return (
-        <ThemeProvider theme={theme}>
+        <>
+            <Toaster />
             <BrowserRouter>
                 <Routes>
                     <Route path="/login" element={<Login />} />
@@ -29,7 +29,7 @@ function App() {
                     <Route path="*" element={<NotFound />} />
                 </Routes>
             </BrowserRouter>
-        </ThemeProvider>
+        </>
     );
 }
 

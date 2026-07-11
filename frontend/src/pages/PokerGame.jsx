@@ -1,13 +1,12 @@
 import "../styles/PokerGame.css";
 import { ACCESS_TOKEN } from "../constants";
-import { Button, IconButton, Slider, Box } from "@mui/material";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AutoCloseAlert from "../components/CustomAlerts";
 import api from "../api";
-import MenuIcon from "@mui/icons-material/Menu";
-import CloseIcon from "@mui/icons-material/Close";
-import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import { Menu, X, LogOut } from "lucide-react";
 import aceOfClubs from "../assets/cards/Ac.svg";
 import twoOfDiamonds from "../assets/cards/2d.svg";
 
@@ -160,7 +159,7 @@ export default function PokerGame() {
     const showCompactUI = isMobile;
 
     return (
-        <div id="game-root">
+        <div id="poker-root">
             <AutoCloseAlert
                 message={alertMessage}
                 severity="error"
@@ -168,98 +167,91 @@ export default function PokerGame() {
                 onClose={() => setAlertMessage("")}
             />
 
-            <div id="game-container">
-                <div id="game-header">
-                    <div className="table-info">
+            <div className="poker-container">
+                <div className="poker-header">
+                    <div className="poker-stakes-badge">
                         6 Max | Stakes: {gameState.stakes.small}/
                         {gameState.stakes.big} | {gameState.num_of_players}/6
                     </div>
-                    <div id="game-leave-div">
-                        <IconButton
-                            className="game-leave-button"
+                    <div className="poker-leave-button-wrapper">
+                        <Button
+                            variant="icon"
+                            size="icon"
+                            className="poker-leave-button"
                             onClick={handleLeaveGame}
                         >
-                            <ExitToAppIcon></ExitToAppIcon>
-                        </IconButton>
+                            <LogOut size={18} />
+                        </Button>
                     </div>
 
                     {showCompactUI && (
-                        <IconButton
-                            className="mobile-menu-button"
+                        <Button
+                            variant="icon"
+                            size="icon"
+                            className="poker-mobile-menu-button"
                             onClick={() => setShowSidebar(!showSidebar)}
                         >
-                            {showSidebar ? <CloseIcon /> : <MenuIcon />}
-                        </IconButton>
+                            {showSidebar ? <X size={18} /> : <Menu size={18} />}
+                        </Button>
                     )}
                 </div>
 
-                <div id="game-poker-table">
+                <div className="poker-table">
                     {gameState.players.map((player) => (
                         <div
                             key={player.playerId}
-                            className={`seat seat-${player.position}`}
+                            className={`poker-seat poker-seat-${player.position}`}
                         >
                             <div
-                                className={`player-circle ${
+                                className={`poker-player-avatar ${
                                     player.active ? "active" : ""
                                 }`}
                             ></div>
-                            <div id="player-name">{player.username}</div>
-                            <div id="player-chips">${player.chips}</div>
+                            <div className="poker-player-info">
+                                <div className="poker-player-name">
+                                    {player.username}
+                                </div>
+                                <div className="poker-player-chips">
+                                    ${player.chips}
+                                </div>
+                            </div>
                         </div>
                     ))}
                 </div>
                 {!showCompactUI && (
-                    <div id="game-action-area">
+                    <div className="poker-action-area">
                         <div
-                            id="player-hand-peek"
-                            tabIndex={0}
+                            className="poker-hole-cards"
                             aria-label="Your hole cards"
                         >
                             {demoHoleCards.map((card) => (
                                 <img
                                     key={card.alt}
-                                    className="player-hole-card"
+                                    className="poker-hole-card"
                                     src={card.src}
                                     alt={card.alt}
                                 />
                             ))}
                         </div>
 
-                        <div id="game-controls">
-                        <div className="bet-controls">
-                            <div className="bet-slider-container">
-                                <Box
-                                    sx={{
-                                        width: "100%",
-                                        maxWidth: 300,
-                                        margin: "0 auto",
-                                    }}
-                                >
+                        <div className="poker-controls">
+                        <div className="poker-bet-controls">
                                     <Slider
-                                        value={betAmount}
-                                        onChange={(e, newValue) =>
+                                        value={[betAmount]}
+                                        onValueChange={([newValue]) =>
                                             setBetAmount(newValue)
                                         }
                                         min={gameState.stakes.big}
                                         max={maxBet}
                                         step={gameState.stakes.big}
-                                        valueLabelDisplay="auto"
-                                        valueLabelFormat={(value) =>
-                                            `£${value}`
-                                        }
                                     />
-                                </Box>
-                                <div className="bet-amount-display">
-                                    Bet: £{betAmount}
-                                </div>
-                            </div>
 
-                            <div className="quick-bet-buttons">
+
+                            <div className="poker-quick-bet-buttons">
                                 <Button
-                                    className="quick-bet-btn"
-                                    variant="outlined"
-                                    size="small"
+                                    className="poker-quick-bet-button"
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() =>
                                         setBetAmount(gameState.stakes.big * 2)
                                     }
@@ -267,9 +259,9 @@ export default function PokerGame() {
                                     2x BB
                                 </Button>
                                 <Button
-                                    className="quick-bet-btn"
-                                    variant="outlined"
-                                    size="small"
+                                    className="poker-quick-bet-button"
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() =>
                                         setBetAmount(gameState.stakes.big * 3)
                                     }
@@ -277,9 +269,9 @@ export default function PokerGame() {
                                     3x BB
                                 </Button>
                                 <Button
-                                    className="quick-bet-btn"
-                                    variant="outlined"
-                                    size="small"
+                                    className="poker-quick-bet-button"
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() =>
                                         setBetAmount(
                                             Math.floor(gameState.pot / 2)
@@ -289,39 +281,44 @@ export default function PokerGame() {
                                     ½ Pot
                                 </Button>
                                 <Button
-                                    className="quick-bet-btn"
-                                    variant="outlined"
-                                    size="small"
+                                    className="poker-quick-bet-button"
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => setBetAmount(maxBet)}
                                 >
                                     Max
                                 </Button>
+                                <div className="poker-bet-amount">
+                                    Bet: £{betAmount}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="control-status">
+                        <div className="poker-control-status">
                             Current action:{" "}
-                            <span className="current-action">Your turn</span>
+                            <span className="poker-current-action">
+                                Your turn
+                            </span>
                         </div>
 
-                        <div id="game-buttons">
+                        <div className="poker-action-buttons">
                             <Button
-                                className="action-btn fold-btn"
-                                variant="contained"
+                                className="poker-action-button poker-fold-button"
+                                size="sm"
                                 onClick={() => handleAction("fold")}
                             >
                                 Fold
                             </Button>
                             <Button
-                                className="action-btn call-btn"
-                                variant="contained"
+                                className="poker-action-button poker-call-button"
+                                size="sm"
                                 onClick={() => handleAction("call")}
                             >
                                 Call
                             </Button>
                             <Button
-                                className="action-btn raise-btn"
-                                variant="contained"
+                                className="poker-action-button poker-raise-button"
+                                size="sm"
                                 onClick={() => handleAction("raise")}
                             >
                                 Raise
@@ -331,124 +328,7 @@ export default function PokerGame() {
                     </div>
                 )}
                 {showCompactUI && showSidebar && (
-                    <div id="mobile-sidebar">
-                        <IconButton
-                            className="mobile-close-btn"
-                            onClick={() => setShowSidebar(false)}
-                            size="small"
-                        >
-                            <CloseIcon fontSize="small" />
-                        </IconButton>
-
-                        <div className="sidebar-content">
-                            {/* Status Indicator */}
-                            <div className="mobile-status">
-                                Your turn •{" "}
-                                <span className="mobile-current-action">
-                                    Action required
-                                </span>
-                            </div>
-
-                            <div className="bet-controls">
-                                <Box
-                                    sx={{
-                                        width: "100%",
-                                        maxWidth: 300,
-                                        margin: "0 auto",
-                                    }}
-                                >
-                                    <Slider
-                                        value={betAmount}
-                                        onChange={(e, newValue) =>
-                                            setBetAmount(newValue)
-                                        }
-                                        min={gameState.stakes.big}
-                                        max={maxBet}
-                                        step={gameState.stakes.big}
-                                        valueLabelDisplay="auto"
-                                        valueLabelFormat={(value) =>
-                                            `£${value}`
-                                        }
-                                    />
-                                </Box>
-                                <div className="bet-amount">
-                                    Bet: £{betAmount}
-                                </div>
-
-                                {/* Quick Bet Buttons */}
-                                <div className="mobile-quick-bets">
-                                    <Button
-                                        className="mobile-quick-bet-btn"
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() =>
-                                            setBetAmount(
-                                                gameState.stakes.big * 2
-                                            )
-                                        }
-                                    >
-                                        2x BB
-                                    </Button>
-                                    <Button
-                                        className="mobile-quick-bet-btn"
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() =>
-                                            setBetAmount(
-                                                gameState.stakes.big * 3
-                                            )
-                                        }
-                                    >
-                                        3x BB
-                                    </Button>
-                                    <Button
-                                        className="mobile-quick-bet-btn"
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() =>
-                                            setBetAmount(
-                                                Math.floor(gameState.pot / 2)
-                                            )
-                                        }
-                                    >
-                                        ½ Pot
-                                    </Button>
-                                    <Button
-                                        className="mobile-quick-bet-btn"
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => setBetAmount(maxBet)}
-                                    >
-                                        Max
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div className="action-buttons-mobile">
-                                <Button
-                                    className="action-btn fold-btn"
-                                    variant="contained"
-                                    onClick={() => handleAction("fold")}
-                                >
-                                    Fold
-                                </Button>
-                                <Button
-                                    className="action-btn call-btn"
-                                    variant="contained"
-                                    onClick={() => handleAction("call")}
-                                >
-                                    Call
-                                </Button>
-                                <Button
-                                    className="action-btn raise-btn"
-                                    variant="contained"
-                                    onClick={() => handleAction("raise")}
-                                >
-                                    Raise
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
+                    <div></div>
                 )}
             </div>
         </div>

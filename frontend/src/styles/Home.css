@@ -1,124 +1,129 @@
 #home-root {
     display: flex;
-    color: white;
+    gap: 24px;
+    color: var(--color-foreground);
     min-height: 100vh;
-    background-color: black;
+    background-color: var(--color-background);
+    padding: 32px;
+    box-sizing: border-box;
 }
 
-#table-container {
+.home-table-panel {
     flex: 5;
-    border-radius: 5px;
-    padding: 0px 20px 20px 20px;
-    background: radial-gradient(circle at center, #0b3d0b, #001a00);
-    margin: 1% 1%;
+    border-radius: 12px;
+    padding: 28px;
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-border);
 }
 
-#table-title {
-    text-align: center;
-    margin-bottom: 15px;
+.home-table-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin: 0 0 24px 0;
 }
 
-#tables-header {
+.home-table-header {
     display: flex;
-    font-weight: bold;
-    background-color: #222d2d;
-    padding: 5px;
-    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border);
 }
 
-#tables-header-stakes-column {
-    border: 0px;
+.home-table-header-cell {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.home-table-rows {
+    margin-top: 4px;
+}
+
+.home-table-row {
+    display: flex;
+    align-items: center;
+    background-color: transparent;
+    padding: 14px 12px;
+    border-radius: 8px;
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color 0.15s ease;
+}
+
+.home-table-row:last-child {
+    border-bottom: none;
+}
+
+.home-table-row:hover {
+    background-color: var(--color-panel-alt);
+}
+
+.home-table-row div {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
     padding: 5px;
+    font-size: 0.9rem;
 }
 
-#tables-header-column {
+.home-sidebar {
     flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 5px;
-    border-left: 1px rgb(179, 175, 175) solid;
-}
-
-#tables-rows {
-    margin-top: 10px;
-}
-
-.table-row {
-    display: flex;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 10px;
-    margin: 5px 0;
-    border-radius: 5px;
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
-    transition: background-color 0.5 ease;
-}
-
-.table-row:hover {
-    background-color: #435e58;
-    transform: scale(1.02);
-    box-shadow: 0 0 10px rgba(30, 30, 23, 0.816);
-}
-
-.table-row div {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 5px;
-}
-
-#sidebar {
-    flex: 1;
-    padding: 15px 20px 0px 0px;
     display: flex;
     flex-direction: column;
+    gap: 20px;
 }
 
-#sidebar-profile {
-    font-size: 1.2rem;
-    margin-bottom: 20px;
-    text-align: center;
-    height: 10%;
-    width: 100%;
-    display: flex;
-    justify-content: space-evenly;
-    align-items: center;
-    border-radius: 5px;
-    background: radial-gradient(circle at center, #136a13, #053e05);
-}
-
-#sidebar-chips {
-    background-color: #0e171e;
-    padding: 10px 10px 10px 10px;
-    border-radius: 50px;
+.home-sidebar-profile {
     font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 10px;
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-border);
 }
 
-#sidebar-claim {
-    width: 100%;
-    background-color: #0e171e;
+.home-sidebar-chips {
+    color: var(--color-accent);
+    font-weight: 600;
+    font-size: 0.95rem;
 }
-#sidebar-buttons {
-    margin-top: 10px;
+
+.home-sidebar-claim {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.home-sidebar-button-group {
     width: 100%;
 }
 
-#sidebar-private {
-    border-radius: 5px;
-    padding: 5px 10px 10px 10px;
+.home-sidebar-private {
+    border-radius: 10px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 20px;
-    background: radial-gradient(circle at center, #136a13, #053e05);
+    gap: 10px;
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-border);
+}
+
+.home-sidebar-private > div:first-child {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    margin-bottom: 4px;
 }
