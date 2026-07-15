@@ -15,6 +15,17 @@ const demoHoleCards = [
     { src: twoOfDiamonds, alt: "Two of diamonds" },
 ];
 
+// UI-test only: fills any empty seats (2-6) with fake players so the table
+// can be previewed fully seated without needing real opponents connected.
+const FILL_DEMO_SEATS = true;
+const DEMO_NAMES = {
+    2: "Alice",
+    3: "Bob",
+    4: "Charlie",
+    5: "Dana",
+    6: "Erin",
+};
+
 export default function PokerGame() {
     const [alertMessage, setAlertMessage] = useState("");
     const navigate = useNavigate();
@@ -25,7 +36,7 @@ export default function PokerGame() {
         num_of_players: 0,
         mainUser: { maxBet: 0 },
         players: [],
-        communityCards: []
+        communityCards: [],
     });
     const [betAmount, setBetAmount] = useState(0);
     const [maxBet, setMaxBet] = useState(0);
@@ -38,7 +49,7 @@ export default function PokerGame() {
     useEffect(() => {
         const access = localStorage.getItem(ACCESS_TOKEN);
         const socket = new WebSocket(
-            `${import.meta.env.VITE_WS_URL}/ws/poker/${access}/`
+            `${import.meta.env.VITE_WS_URL}/ws/poker/${access}/`,
         );
 
         socketRef.current = socket;
@@ -102,6 +113,16 @@ export default function PokerGame() {
                     actualSeat: seatData.actual_seat,
                     active: false,
                 });
+            } else if (FILL_DEMO_SEATS && position !== 1) {
+                transformedPlayers.push({
+                    position: position,
+                    username: DEMO_NAMES[position],
+                    chips: 1000,
+                    playerId: `demo-${position}`,
+                    actualSeat: position,
+                    active: false,
+                    isDemo: true,
+                });
             }
         }
         setGameState({
@@ -134,7 +155,7 @@ export default function PokerGame() {
                     event: "player_action",
                     action: action,
                     amount: amount || betAmount,
-                })
+                }),
             );
         }
     };
@@ -148,7 +169,7 @@ export default function PokerGame() {
                 setAlertMessage(error.response.data.error);
             } else {
                 setAlertMessage(
-                    "Could not leave a game. Please refresh or try again later!"
+                    "Could not leave a game. Please refresh or try again later!",
                 );
             }
             navigate("/");
@@ -218,34 +239,32 @@ export default function PokerGame() {
                         </div>
                     ))}
                 </div>
-                {!showCompactUI && (
-                    <div className="poker-action-area">
-                        <div
-                            className="poker-hole-cards"
-                            aria-label="Your hole cards"
-                        >
-                            {demoHoleCards.map((card) => (
-                                <img
-                                    key={card.alt}
-                                    className="poker-hole-card"
-                                    src={card.src}
-                                    alt={card.alt}
-                                />
-                            ))}
-                        </div>
+                <div className="poker-action-area">
+                    <div
+                        className="poker-hole-cards"
+                        aria-label="Your hole cards"
+                    >
+                        {demoHoleCards.map((card) => (
+                            <img
+                                key={card.alt}
+                                className="poker-hole-card"
+                                src={card.src}
+                                alt={card.alt}
+                            />
+                        ))}
+                    </div>
 
-                        <div className="poker-controls">
+                    <div className="poker-controls">
                         <div className="poker-bet-controls">
-                                    <Slider
-                                        value={[betAmount]}
-                                        onValueChange={([newValue]) =>
-                                            setBetAmount(newValue)
-                                        }
-                                        min={gameState.stakes.big}
-                                        max={maxBet}
-                                        step={gameState.stakes.big}
-                                    />
-
+                            <Slider
+                                value={[betAmount]}
+                                onValueChange={([newValue]) =>
+                                    setBetAmount(newValue)
+                                }
+                                min={gameState.stakes.big}
+                                max={maxBet}
+                                step={gameState.stakes.big}
+                            />
 
                             <div className="poker-quick-bet-buttons">
                                 <Button
@@ -274,7 +293,7 @@ export default function PokerGame() {
                                     size="sm"
                                     onClick={() =>
                                         setBetAmount(
-                                            Math.floor(gameState.pot / 2)
+                                            Math.floor(gameState.pot / 2),
                                         )
                                     }
                                 >
@@ -288,17 +307,19 @@ export default function PokerGame() {
                                 >
                                     Max
                                 </Button>
-                                <div className="poker-bet-amount">
-                                    Bet: £{betAmount}
-                                </div>
+                                
                             </div>
                         </div>
 
                         <div className="poker-control-status">
+                            <div className="poker-bet-amount">
+                                    Bet: £{betAmount}
+                                </div>
                             Current action:{" "}
                             <span className="poker-current-action">
                                 Your turn
                             </span>
+                            
                         </div>
 
                         <div className="poker-action-buttons">
@@ -324,12 +345,8 @@ export default function PokerGame() {
                                 Raise
                             </Button>
                         </div>
-                        </div>
                     </div>
-                )}
-                {showCompactUI && showSidebar && (
-                    <div></div>
-                )}
+                </div>
             </div>
         </div>
     );
