@@ -47,7 +47,7 @@ def get_game_info(user):
 
 @database_sync_to_async
 def leave_game(user):
-    #TO-DO: Fix this and then replace the LeaveGame in views.py
+    # TO-DO: Fix this and then replace the LeaveGame in views.py
     '''
     Leaves game
 

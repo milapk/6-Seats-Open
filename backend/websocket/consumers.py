@@ -38,7 +38,9 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
             self.turn_timeout_task = None
             channel_name, seat_num = await start_game(self.game)
             if channel_name:
-                await self.channel_layer.send(channel_name, {'type': 'player_to_act', 'seat_num': seat_num})
+                await self.channel_layer.send(
+                    channel_name, {'type': 'player_to_act', 'seat_num': seat_num}
+                )
         else:
             await self.close()
 
@@ -54,7 +56,9 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
         await asyncio.sleep(120)
         info = await get_player_turn_deadline(self.game.id, seat_num)
         if info and not info['player_acted']:
-            await sync_to_async(PlayerModel.objects.filter(game=self.game, seat_number=seat_num).update)(is_folded=True)
+            await sync_to_async(
+                PlayerModel.objects.filter(game=self.game, seat_number=seat_num).update
+            )(is_folded=True)
             await clear_player_turn_deadline(self.game.id, seat_num)
             await self.channel_layer.group_send(self.room_group_name, {
                 'type': 'player_folded',
@@ -84,7 +88,9 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
 
     async def player_folded(self, event):
         game_info = await get_game_info(self.user)
-        await self.send(text_data=json.dumps({'event': 'player_folded', 'seat_num': event['seat_num'], 'data': game_info}))
+        await self.send(text_data=json.dumps(
+            {'event': 'player_folded', 'seat_num': event['seat_num'], 'data': game_info}
+        ))
 
     async def send_cards(self, event):
         await self.send(text_data=json.dumps({}))
