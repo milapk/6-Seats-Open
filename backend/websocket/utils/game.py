@@ -47,6 +47,7 @@ def get_game_info(user):
 
 @database_sync_to_async
 def leave_game(user):
+    #TO-DO: Fix this and then replace the LeaveGame in views.py
     '''
     Leaves game
 
@@ -63,9 +64,14 @@ def leave_game(user):
 
 async def start_game(game):
     '''
-    Starts game and Returns channel name of the player to act or None if game could'nt start.
+    Starts game.
+
+    Return:
+        -tuple: (channel_name, seat_num) of the player to act, or (None, None)
+            if the game couldn't start.
     '''
     seat_num = await sync_to_async(game.start_game)()
     if seat_num:
-        return await get_player_channel(game.id, seat_num)
-    return None
+        channel_name = await get_player_channel(game.id, seat_num)
+        return channel_name, seat_num
+    return None, None
