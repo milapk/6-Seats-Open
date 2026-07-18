@@ -338,6 +338,7 @@ class GameModel(models.Model):
             game.dealer_position = self._get_next_taken_seat(game.dealer_position)
             sb_position = self._get_next_taken_seat(game.dealer_position)
             bb_position = self._get_next_taken_seat(sb_position)
+            to_act_seat = self._get_next_taken_seat(bb_position)
 
             game.cards = self._create_deck()
             self._deal_cards(game)
@@ -362,11 +363,12 @@ class GameModel(models.Model):
             pot.add_chips(bb_amount)
             pot.players.add(bb_player)
 
+            game.current_turn = PlayerModel.objects.select_for_update().get(
+                game=game, seat_number=to_act_seat)
             game.save()
             pot.save()
-            next_player = self._get_next_taken_seat(bb_position)
 
-            return next_player
+            return to_act_seat
 
 
 class PlayerModel(models.Model):
