@@ -35,6 +35,7 @@ class CustomUser(AbstractUser):
         Return:
             -boolean: True if cooldown over else False.
         '''
+        self.refresh_from_db(fields=['chips_claimed'])
         return timezone.now() >= self.chips_claimed + timedelta(hours=1)
 
     def get_claim_cooldown(self):
@@ -42,6 +43,7 @@ class CustomUser(AbstractUser):
         Return:
             -int: the number of seconds remaining until next claim, or 0 if ready now
         '''
+        self.refresh_from_db(fields=['chips_claimed'])
         next_claim_time = self.chips_claimed + timedelta(hours=1)
         remaining_time = (next_claim_time - timezone.now()).total_seconds()
         return max(0, remaining_time)
@@ -78,6 +80,7 @@ class PotModel(models.Model):
 
     def add_chips(self, amount):
         '''Add chips to this pot'''
+        self.refresh_from_db(fields=['pot_money'])
         self.pot_money = models.F('pot_money') + amount
         self.save(update_fields=['pot_money'])
 
@@ -150,11 +153,12 @@ class GameModel(models.Model):
             -int: seat number or None if table is full.
 
 
-        ## EASTER EGG: for who ever is reading this, quite rare that you're even seeing
-        ## this since this is the 1/2 in this repo,
+        ## EASTER EGG: for who ever is reading this.
         ## btw great use of free will to inspect this beautifully written code,
-        ## but i do wonder why you are here, u must be extremely nosey. But either way
-        ## im grateful u are here. do lmk if you find this, would be a great conversation
+        ## but i do wonder why you are here, you must be extremely nosey or a hiring manager 
+        ## But either way im grateful u are here. do lmk if you find this, 
+        ## would be a great conversation starter
+        ## PLS HIRE ME IF YOU ARE A HIRING MANAGER OR INTERVIEWER OR ANYONE THAT CAN GET ME A JOB
         '''
         with transaction.atomic():
             game = GameModel.objects.select_for_update().get(pk=self.pk)
@@ -264,6 +268,7 @@ class GameModel(models.Model):
             -dictioary: containing stakes, number of players, and (username + chips)
                 for each player in-game.
         '''
+        # Stale fields; be aware
         seats = self._get_centric_adjusted_seats(player_pk)
         game_info = {}
         if seats:
@@ -326,22 +331,23 @@ class GameModel(models.Model):
         Return:
             -integer: The current player to act or None if game not started.
         '''
-        if self.num_of_players < 2 or self.game_started:
-            return None
-
         with transaction.atomic():
             game = GameModel.objects.select_for_update().get(pk=self.pk)
+
+            if game.num_of_players < 2 or game.game_started:
+                return None
+
             pot = PotModel.objects.create(game=game, pot_money=0)
             game.betting_stage = 0
             game.game_started = True
 
-            game.dealer_position = self._get_next_taken_seat(game.dealer_position)
-            sb_position = self._get_next_taken_seat(game.dealer_position)
-            bb_position = self._get_next_taken_seat(sb_position)
-            to_act_seat = self._get_next_taken_seat(bb_position)
+            game.dealer_position = game._get_next_taken_seat(game.dealer_position)
+            sb_position = game._get_next_taken_seat(game.dealer_position)
+            bb_position = game._get_next_taken_seat(sb_position)
+            to_act_seat = game._get_next_taken_seat(bb_position)
 
-            game.cards = self._create_deck()
-            self._deal_cards(game)
+            game.cards = game._create_deck()
+            game._deal_cards(game)
 
             sb_player = PlayerModel.objects.select_for_update().get(
                 game=game, seat_number=sb_position)
@@ -368,6 +374,7 @@ class GameModel(models.Model):
             game.save()
             pot.save()
 
+            self.__dict__.update(game.__dict__)
             return to_act_seat
 
 
@@ -449,3 +456,11 @@ class PlayerModel(models.Model):
                     'current_bet',
                     'total_round_bet',
                     'cards'])
+
+    def get_hole_cards(self):
+        '''
+        Return:
+            -tuple: (hole_card1, hole_card2) of the player hole cards they were dealt
+        '''
+        self.refresh_from_db(fields=['cards'])
+        return tuple(self.cards.split(','))
