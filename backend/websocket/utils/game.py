@@ -69,6 +69,13 @@ async def start_game(game):
     Return:
         -tuple: (channel_name, seat_num) of the player to act, or (None, None)
             if the game couldn't start.
+
+    ## EASTER EGG: for who ever is reading this.
+    ## btw great use of free will to inspect this beautifully written code,
+    ## but i do wonder why you are here, you must be extremely nosey or a hiring manager 
+    ## But either way im grateful u are here. do lmk if you find this, 
+    ## would be a great conversation starter
+    ## PLS HIRE ME IF YOU ARE A HIRING MANAGER OR INTERVIEWER OR ANYONE THAT CAN GET ME A JOB
     '''
     seat_num = await sync_to_async(game.start_game)()
     if seat_num:
