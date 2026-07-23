@@ -8,8 +8,7 @@ const buttonVariants = cva(
     {
         variants: {
             variant: {
-                default:
-                    "bg-accent text-accent-foreground hover:bg-accent/90",
+                default: "bg-accent text-accent-foreground hover:bg-accent/90",
                 outline:
                     "border border-border bg-transparent text-foreground hover:bg-white/5",
                 ghost: "bg-transparent text-foreground hover:bg-white/5",
@@ -25,7 +24,7 @@ const buttonVariants = cva(
             variant: "default",
             size: "default",
         },
-    }
+    },
 );
 
 const Button = React.forwardRef(
@@ -38,7 +37,7 @@ const Button = React.forwardRef(
                 {...props}
             />
         );
-    }
+    },
 );
 Button.displayName = "Button";
 

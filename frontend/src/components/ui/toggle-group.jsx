@@ -21,7 +21,7 @@ const ToggleGroupItem = React.forwardRef(
         >
             {children}
         </ToggleGroupPrimitive.Item>
-    )
+    ),
 );
 ToggleGroupItem.displayName = ToggleGroupPrimitive.Item.displayName;
 

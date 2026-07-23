@@ -36,7 +36,7 @@ export default function Home() {
                 setPlayerChips(response.data.chips);
                 setAlertType("success");
                 setAlertMessage(
-                    "Chips claimed successfully! Get more in an Hour!"
+                    "Chips claimed successfully! Get more in an Hour!",
                 );
             }
         } catch (error) {
@@ -44,7 +44,7 @@ export default function Home() {
                 const time = Math.floor(error.response.data.cool_down / 60);
                 setAlertType("error");
                 setAlertMessage(
-                    `Chips already claimed! Get more in an ${time} minutes!`
+                    `Chips already claimed! Get more in an ${time} minutes!`,
                 );
             }
         }
@@ -97,7 +97,7 @@ export default function Home() {
                                     onClick={() =>
                                         handleDialogOpen(
                                             table.small_blind,
-                                            table.big_blind
+                                            table.big_blind,
                                         )
                                     }
                                 >

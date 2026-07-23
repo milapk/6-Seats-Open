@@ -41,7 +41,7 @@ export default function BuyInDialog({
                 setAlertMessage(error.response.data.error);
             } else {
                 setAlertMessage(
-                    "Could not join a game. Please refresh or try again later!"
+                    "Could not join a game. Please refresh or try again later!",
                 );
             }
         }

@@ -34,11 +34,11 @@ export default function UserForm({ type }) {
         } catch (error) {
             if (error.response && error.response.status === 401) {
                 setAlertMessage(
-                    "Invalid Username or Password, please try again!"
+                    "Invalid Username or Password, please try again!",
                 );
             } else {
                 setAlertMessage(
-                    "An error occurred. Please refresh or try again later."
+                    "An error occurred. Please refresh or try again later.",
                 );
             }
         }
@@ -72,11 +72,11 @@ export default function UserForm({ type }) {
         } catch (error) {
             if (error.response && error.response.data.username) {
                 setAlertMessage(
-                    "Username is already taken, please enter another one!"
+                    "Username is already taken, please enter another one!",
                 );
             } else {
                 setAlertMessage(
-                    "An error occurred. Please refresh or try again later."
+                    "An error occurred. Please refresh or try again later.",
                 );
             }
         }

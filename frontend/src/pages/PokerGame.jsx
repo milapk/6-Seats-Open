@@ -307,19 +307,17 @@ export default function PokerGame() {
                                 >
                                     Max
                                 </Button>
-                                
                             </div>
                         </div>
 
                         <div className="poker-control-status">
                             <div className="poker-bet-amount">
-                                    Bet: £{betAmount}
-                                </div>
+                                Bet: £{betAmount}
+                            </div>
                             Current action:{" "}
                             <span className="poker-current-action">
                                 Your turn
                             </span>
-                            
                         </div>
 
                         <div className="poker-action-buttons">

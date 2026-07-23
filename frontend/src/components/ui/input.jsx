@@ -10,7 +10,7 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
                 "flex h-10 w-full rounded-md border border-border bg-white/5 px-3 py-2 text-sm text-foreground placeholder:text-muted transition-colors outline-none",
                 "focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring",
                 "disabled:cursor-not-allowed disabled:opacity-50",
-                className
+                className,
             )}
             {...props}
         />
