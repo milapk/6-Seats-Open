@@ -180,7 +180,7 @@ class GameModel(models.Model):
                 # If 2 players are sitting side-by-side, it picks a seat opposite to one
                 # of the two players.
                 if sides_count == 2:
-                    seat = self._seat_add_sub(random.choices(taken_seats), 3)
+                    seat = self._seat_add_sub(random.choice(taken_seats), 3)
                 else:
                     # If the 2 players are sitting together with 1 free seat between
                     # them, then pick a seat so it creates a triangle. If the 2 players
