@@ -376,6 +376,81 @@ class GameModel(models.Model):
 
             self.__dict__.update(game.__dict__)
             return to_act_seat
+        
+    def get_player_turn(self, user):
+        '''
+        Return:
+            -boolean: True of the user is the current player acting; else False
+        '''
+        player = PlayerModel.objects.get(user=user)
+        game = GameModel.objects.get(pk=self.pk)
+
+        return True if player == game.current_turn else False
+
+    def perform_player_act(self, user, action, amount=None):
+        '''
+        Applies the acting player's action, then advances the current turn to
+        the next player still in the hand.
+
+        Arguments:
+            -user: CustomUser of the player performing the action.
+            -action: one of 'fold', 'bet' or 'check'.
+            -amount: chips being added to the pot this action (required for 'bet').
+
+        Return:
+            -boolean: True if the action was legal and applied, else False.
+        '''
+        with transaction.atomic():
+            game = GameModel.objects.select_for_update().get(pk=self.pk)
+            player = PlayerModel.objects.select_for_update().get(user=user, game=game)
+
+            if game.current_turn_id != player.id:
+                return False
+
+            highest_bet = PlayerModel.objects.filter(
+                game=game, is_folded=False).aggregate(
+                    models.Max('total_round_bet'))['total_round_bet__max'] or 0
+
+            match action:
+                case 'fold':
+                    player.is_folded = True
+                    player.had_acted = True
+                    player.save(update_fields=['is_folded', 'had_acted'])
+                case 'bet':
+                    if not amount or amount <= 0 or amount > player.chips_in_play:
+                        return False
+                    if amount == player.chips_in_play:
+                        player.all_in = True
+                    player.current_bet = amount
+                    player.total_round_bet += amount
+                    player.chips_in_play -= amount
+                    player.had_acted = True
+                    pot = PotModel.objects.select_for_update().get(game=game, closed=False)
+                    pot.players.add(player)
+                    pot.add_chips(amount)
+                    player.save(update_fields=[
+                        'current_bet', 'total_round_bet', 'chips_in_play',
+                        'had_acted', 'all_in'])
+                case 'check':
+                    if player.had_acted or player.total_round_bet < highest_bet:
+                        return False
+                    player.current_bet = 0
+                    player.had_acted = True
+                    player.save(update_fields=['current_bet', 'had_acted'])
+                case _:
+                    return False
+
+            next_seat = player.seat_number
+            for _ in range(6):
+                next_seat = game._seat_add_sub(next_seat, 1)
+                next_player = PlayerModel.objects.select_for_update().filter(
+                    game=game, seat_number=next_seat, is_folded=False).first()
+                if next_player:
+                    game.current_turn = next_player
+                    game.save(update_fields=['current_turn'])
+                    break
+
+            return True
 
 
 class PlayerModel(models.Model):
@@ -464,3 +539,12 @@ class PlayerModel(models.Model):
         '''
         self.refresh_from_db(fields=['cards'])
         return tuple(self.cards.split(','))
+    
+    def get_seat_number(self):
+        '''
+        Return:
+            -int: The players seat number
+        '''
+        self.refresh_from_db(fields=['seat_number'])
+        return self.seat_number
+    
