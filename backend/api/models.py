@@ -451,6 +451,66 @@ class GameModel(models.Model):
                     break
 
             return True
+        
+    def perform_next_stage(self):
+        '''
+        Checks if game can progress to next stage, and then progress's to the next stage
+
+        Return:
+            -boolean: True if game progressed to next stage; else False
+            -string: The new stage game is at; None if game didn't progress
+        '''
+        with transaction.atomic():
+            game = GameModel.objects.select_for_update().get(pk=self.pk)
+
+            if game.betting_stage >= 4:
+                return False, None
+
+            active_players = PlayerModel.objects.select_for_update().filter(
+                game=game, is_folded=False)
+
+            if active_players.filter(all_in=False, had_acted=False).exists():
+                return False, None
+
+            highest_bet = active_players.aggregate(
+                models.Max('total_round_bet'))['total_round_bet__max'] or 0
+            if active_players.filter(all_in=False).exclude(
+                    total_round_bet=highest_bet).exists():
+                return False, None
+
+            game.betting_stage += 1
+
+            deck = game.cards.split(',') if game.cards else []
+            community = game.community_cards.split(',') if game.community_cards else []
+
+            if game.betting_stage == 1:
+                dealt, deck = deck[:3], deck[3:]
+            elif game.betting_stage in (2, 3):
+                dealt, deck = deck[:1], deck[1:]
+            else:
+                dealt = []
+
+            community += dealt
+            game.community_cards = ','.join(community) if community else None
+            game.cards = ','.join(deck)
+
+            if game.betting_stage == 4:
+                game.current_turn = None
+            else:
+                active_players.update(current_bet=0, had_acted=False)
+                next_seat = game.dealer_position
+                next_player = None
+                for _ in range(6):
+                    next_seat = game._seat_add_sub(next_seat, 1)
+                    next_player = active_players.filter(seat_number=next_seat).first()
+                    if next_player:
+                        break
+                game.current_turn = next_player
+
+            game.save(update_fields=['betting_stage', 'community_cards', 'cards', 'current_turn'])
+
+            self.__dict__.update(game.__dict__)
+            return True, game.get_betting_stage_display()
 
 
 class PlayerModel(models.Model):
