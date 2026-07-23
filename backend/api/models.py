@@ -376,7 +376,7 @@ class GameModel(models.Model):
 
             self.__dict__.update(game.__dict__)
             return to_act_seat
-        
+
     def get_player_turn(self, user):
         '''
         Return:
@@ -451,7 +451,7 @@ class GameModel(models.Model):
                     break
 
             return True
-        
+
     def perform_next_stage(self):
         '''
         Checks if game can progress to next stage, and then progress's to the next stage
@@ -599,7 +599,7 @@ class PlayerModel(models.Model):
         '''
         self.refresh_from_db(fields=['cards'])
         return tuple(self.cards.split(','))
-    
+
     def get_seat_number(self):
         '''
         Return:
@@ -607,4 +607,3 @@ class PlayerModel(models.Model):
         '''
         self.refresh_from_db(fields=['seat_number'])
         return self.seat_number
-    

@@ -19,6 +19,7 @@ from .utils.redis_manager import (
 )
 import time
 
+
 class PokerGameConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
@@ -68,7 +69,9 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
         current_time = time.time()
         deadline_info = await get_player_turn_deadline(self.game.id, seat_num)
         if not deadline_info or deadline_info['deadline'] < current_time:
-            await self.send(text_data=json.dumps({'event': 'invalid_act', 'msg': 'Deadline passed'}))
+            await self.send(text_data=json.dumps({
+                'event': 'invalid_act', 'msg': 'Deadline passed'
+            }))
             return
 
         acted = await sync_to_async(self.game.perform_player_act)(
