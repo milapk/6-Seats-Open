@@ -76,7 +76,8 @@ class PotModel(models.Model):
     game = models.ForeignKey('GameModel', on_delete=models.CASCADE)
     players = models.ManyToManyField('PlayerModel', related_name='pots')
     pot_money = models.PositiveIntegerField(default=0)
-    closed = models.BooleanField(default=False)
+    cap = models.PositiveIntegerField(null=True, blank=True)
+    order = models.PositiveSmallIntegerField(default=0)
 
     def add_chips(self, amount):
         '''Add chips to this pot'''
@@ -354,7 +355,8 @@ class GameModel(models.Model):
             sb_amount = min(sb_player.chips_in_play, game.table_type.small_blind)
             sb_player.chips_in_play -= sb_amount
             sb_player.current_bet = sb_amount
-            sb_player.total_round_bet = sb_amount
+            sb_player.street_bet = sb_amount
+            sb_player.total_bet = sb_amount
             sb_player.save()
             pot.add_chips(sb_amount)
             pot.players.add(sb_player)
@@ -364,7 +366,8 @@ class GameModel(models.Model):
             bb_amount = min(bb_player.chips_in_play, game.table_type.big_blind)
             bb_player.chips_in_play -= bb_amount
             bb_player.current_bet = bb_amount
-            bb_player.total_round_bet = bb_amount
+            bb_player.street_bet = bb_amount
+            bb_player.total_bet = bb_amount
             bb_player.save()
             pot.add_chips(bb_amount)
             pot.players.add(bb_player)
@@ -409,7 +412,7 @@ class GameModel(models.Model):
 
             highest_bet = PlayerModel.objects.filter(
                 game=game, is_folded=False).aggregate(
-                    models.Max('total_round_bet'))['total_round_bet__max'] or 0
+                    models.Max('street_bet'))['street_bet__max'] or 0
 
             match action:
                 case 'fold':
@@ -419,20 +422,27 @@ class GameModel(models.Model):
                 case 'bet':
                     if not amount or amount <= 0 or amount > player.chips_in_play:
                         return False
-                    if amount == player.chips_in_play:
-                        player.all_in = True
+                    
                     player.current_bet = amount
-                    player.total_round_bet += amount
+                    player.street_bet += amount
+                    player.total_bet += amount
                     player.chips_in_play -= amount
                     player.had_acted = True
-                    pot = PotModel.objects.select_for_update().get(game=game, closed=False)
+
+                    pot = PotModel.objects.select_for_update().get(game=game, cap__isnull=True)
                     pot.players.add(player)
                     pot.add_chips(amount)
+
+                    if amount == player.chips_in_play:
+                        player.all_in = True
+                        pot.cap = player.total_bet
+
+                    pot.save(update_fields=['cap'])
                     player.save(update_fields=[
-                        'current_bet', 'total_round_bet', 'chips_in_play',
+                        'current_bet', 'street_bet', 'total_bet', 'chips_in_play',
                         'had_acted', 'all_in'])
                 case 'check':
-                    if player.had_acted or player.total_round_bet < highest_bet:
+                    if player.had_acted or player.street_bet < highest_bet:
                         return False
                     player.current_bet = 0
                     player.had_acted = True
@@ -473,9 +483,9 @@ class GameModel(models.Model):
                 return False, None
 
             highest_bet = active_players.aggregate(
-                models.Max('total_round_bet'))['total_round_bet__max'] or 0
+                models.Max('street_bet'))['street_bet__max'] or 0
             if active_players.filter(all_in=False).exclude(
-                    total_round_bet=highest_bet).exists():
+                    street_bet=highest_bet).exists():
                 return False, None
 
             game.betting_stage += 1
@@ -496,8 +506,9 @@ class GameModel(models.Model):
 
             if game.betting_stage == 4:
                 game.current_turn = None
+                game.calculate_side_pots()
             else:
-                active_players.update(current_bet=0, had_acted=False)
+                active_players.update(current_bet=0, street_bet=0, had_acted=False)
                 next_seat = game.dealer_position
                 next_player = None
                 for _ in range(6):
@@ -512,6 +523,41 @@ class GameModel(models.Model):
             self.__dict__.update(game.__dict__)
             return True, game.get_betting_stage_display()
 
+    def calculate_side_pots(self):
+        '''
+        Splits the games pot into main/side pots based on each players total
+        contribution this hand. Players who contributed less (because they went
+        all-in) cap the pots they're eligible for; folded players chips stay in
+        the pots but they aren't eligible to win them.
+
+        Return:
+            -QuerySet: the games PotModel rows after splitting, ordered by
+                order (main pot first, side pots after).
+        '''
+        with transaction.atomic():
+            game = GameModel.objects.select_for_update().get(pk=self.pk)
+            players = list(PlayerModel.objects.select_for_update().filter(
+                game=game, total_bet__gt=0))
+
+            PotModel.objects.filter(game=game).delete()
+
+            levels = sorted(set(player.total_bet for player in players))
+            previous_level = 0
+            for order, level in enumerate(levels):
+                contributors = [p for p in players if p.total_bet >= level]
+                eligible = [p for p in contributors if not p.is_folded]
+
+                pot = PotModel.objects.create(
+                    game=game,
+                    cap=level,
+                    order=order,
+                    pot_money=(level - previous_level) * len(contributors))
+                pot.players.set(eligible)
+
+                previous_level = level
+
+            return PotModel.objects.filter(game=game).order_by('order')
+
 
 class PlayerModel(models.Model):
     user = models.ForeignKey('api.CustomUser', on_delete=models.CASCADE)
@@ -523,7 +569,8 @@ class PlayerModel(models.Model):
     all_in = models.BooleanField(default=False)
     is_folded = models.BooleanField(default=False)
     had_acted = models.BooleanField(default=False)
-    total_round_bet = models.PositiveIntegerField(default=0)
+    street_bet = models.PositiveIntegerField(default=0)
+    total_bet = models.PositiveIntegerField(default=0)
 
     def join_game(self, game, user_pk, buy_in):
         '''
@@ -576,7 +623,8 @@ class PlayerModel(models.Model):
             player.is_folded = False
             player.all_in = False
             player.current_bet = 0
-            player.total_round_bet = 0
+            player.street_bet = 0
+            player.total_bet = 0
             player.cards = ''
 
             user.save(update_fields=['chips'])
@@ -589,7 +637,8 @@ class PlayerModel(models.Model):
                     'is_folded',
                     'all_in',
                     'current_bet',
-                    'total_round_bet',
+                    'street_bet',
+                    'total_bet',
                     'cards'])
 
     def get_hole_cards(self):
