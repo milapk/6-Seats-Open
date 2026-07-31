@@ -150,7 +150,7 @@ class GetCentricAdjustedSeatsTest(GameModelHelpersTestCase):
         self.assertIsNone(self.game._get_centric_adjusted_seats(player.pk))
 
     def test_rotates_so_requesting_player_is_first(self):
-        p1 = self._seat_player(1, 'p1')
+        self._seat_player(1, 'p1')
         p3 = self._seat_player(3, 'p3')
 
         seats = self.game._get_centric_adjusted_seats(p3.pk)
@@ -332,7 +332,7 @@ class StartGameTest(GameModelHelpersTestCase):
 
     def test_blind_is_capped_when_player_short_stacked(self):
         p1 = self._seat_player(1, 'p1')
-        p2 = self._seat_player(2, 'p2')
+        self._seat_player(2, 'p2')
         p1.chips_in_play = 5  # less than big blind
         p1.save(update_fields=['chips_in_play'])
 
