@@ -423,21 +423,46 @@ class GameModel(models.Model):
                     if not amount or amount <= 0 or amount > player.chips_in_play:
                         return False
                     
-                    player.current_bet = amount
-                    player.street_bet += amount
-                    player.total_bet += amount
-                    player.chips_in_play -= amount
-                    player.had_acted = True
-
                     pot = PotModel.objects.select_for_update().get(game=game, cap__isnull=True)
                     pot.players.add(player)
                     pot.add_chips(amount)
 
                     if amount == player.chips_in_play:
                         player.all_in = True
-                        pot.cap = player.total_bet
 
-                    pot.save(update_fields=['cap'])
+                    player.current_bet = amount
+                    player.street_bet += amount
+                    player.total_bet += amount
+                    player.chips_in_play -= amount
+                    player.had_acted = True
+
+                    player.save(update_fields=[
+                        'current_bet', 'street_bet', 'total_bet', 'chips_in_play',
+                        'had_acted', 'all_in'])
+                case 'call':
+                    if not amount or amount <=0 or amount > player.chips_in_play:
+                        return False
+
+                    # returns False if amount != call_amount and player isn't going all-in via
+                    # a call
+                    if amount + player.street_bet != highest_bet: 
+                        if not (player.chips_in_play < highest_bet - player.street_bet and 
+                            amount == player.chips_in_play):
+                                return False
+                    
+                    pot = PotModel.objects.select_for_update().get(game=game, cap__isnull=True)
+                    pot.players.add(player)
+                    pot.add_chips(amount)
+
+                    if amount == player.chips_in_play:
+                        player.all_in = True
+
+                    player.current_bet = amount
+                    player.street_bet += amount
+                    player.total_bet += amount
+                    player.chips_in_play -= amount
+                    player.had_acted = True
+
                     player.save(update_fields=[
                         'current_bet', 'street_bet', 'total_bet', 'chips_in_play',
                         'had_acted', 'all_in'])
@@ -454,7 +479,7 @@ class GameModel(models.Model):
             for _ in range(6):
                 next_seat = game._seat_add_sub(next_seat, 1)
                 next_player = PlayerModel.objects.select_for_update().filter(
-                    game=game, seat_number=next_seat, is_folded=False).first()
+                    game=game, seat_number=next_seat, is_folded=False, all_in=False).first()
                 if next_player:
                     game.current_turn = next_player
                     game.save(update_fields=['current_turn'])
