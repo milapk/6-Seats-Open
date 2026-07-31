@@ -375,7 +375,6 @@ class GameModel(models.Model):
             game.current_turn = PlayerModel.objects.select_for_update().get(
                 game=game, seat_number=to_act_seat)
             game.save()
-            pot.save()
 
             self.__dict__.update(game.__dict__)
             return to_act_seat
@@ -422,7 +421,7 @@ class GameModel(models.Model):
                 case 'bet':
                     if not amount or amount <= 0 or amount > player.chips_in_play:
                         return False
-                    
+
                     pot = PotModel.objects.select_for_update().get(game=game, cap__isnull=True)
                     pot.players.add(player)
                     pot.add_chips(amount)
@@ -440,16 +439,16 @@ class GameModel(models.Model):
                         'current_bet', 'street_bet', 'total_bet', 'chips_in_play',
                         'had_acted', 'all_in'])
                 case 'call':
-                    if not amount or amount <=0 or amount > player.chips_in_play:
+                    if not amount or amount <= 0 or amount > player.chips_in_play:
                         return False
 
                     # returns False if amount != call_amount and player isn't going all-in via
                     # a call
-                    if amount + player.street_bet != highest_bet: 
-                        if not (player.chips_in_play < highest_bet - player.street_bet and 
-                            amount == player.chips_in_play):
-                                return False
-                    
+                    if amount + player.street_bet != highest_bet:
+                        if not (player.chips_in_play < highest_bet - player.street_bet and
+                                amount == player.chips_in_play):
+                            return False
+
                     pot = PotModel.objects.select_for_update().get(game=game, cap__isnull=True)
                     pot.players.add(player)
                     pot.add_chips(amount)
