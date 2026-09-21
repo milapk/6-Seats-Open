@@ -21,7 +21,6 @@ import time
 
 
 class PokerGameConsumer(AsyncWebsocketConsumer):
-
     async def connect(self):
         self.token = self.scope['url_route']['kwargs']['token']
         self.user = await get_user(self.token)
@@ -40,6 +39,10 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
             self.turn_timeout_task = None
             channel_name, seat_num = await start_game(self.game)
             if channel_name:
+                await self.channel_layer.group_send(self.room_group_name, {
+                    'type': 'game_started',
+                    'user_id': self.user.id
+                })
                 await self.channel_layer.send(
                     channel_name, {'type': 'player_to_act', 'seat_num': seat_num}
                 )
@@ -143,6 +146,10 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
         else:
             await self.send(text_data=json.dumps({'event': 'player_joined', 'data': game_info}))
 
+    async def game_started(self, event):
+        game_info = await get_game_info(self.user)
+        await self.send(text_data=json.dumps({'event': 'game_started', 'data': game_info}))
+
     async def player_left(self, event):
         user_id = event.get('user_id')
         if user_id == self.user.id:
@@ -160,7 +167,8 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
     async def player_acted(self, event):
         game_info = await get_game_info(self.user)
         await self.send(text_data=json.dumps(
-            {'event': 'player_acted', 'seat_num': event['seat_num'], 'data': game_info}
+            {'event': 'player_acted', 'seat': event['seat_num'], 
+            'act': event['act'], 'amount': event['amount'], 'data': game_info}
         ))
 
     async def player_folded(self, event):
