@@ -56,52 +56,72 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
         except json.JSONDecodeError:
             return
-        if not isinstance(data, dict) or data.get('event') != 'player_act':
+        if not isinstance(data, dict):
             return
 
-        if not await sync_to_async(self.game.get_player_turn)(self.user):
-            await self.send(text_data=json.dumps({'event': 'invalid_act', 'msg': 'Not your turn'}))
-            return
+        if data.get('event') == 'player_act':
+            if not await sync_to_async(self.game.get_player_turn)(self.user):
+                await self.send(text_data=json.dumps({'event': 'invalid_act', 'msg': 'Not your turn'}))
+                return
 
-        player = await sync_to_async(PlayerModel.objects.get)(user=self.user, game=self.game)
-        seat_num = player.seat_number
+            player = await sync_to_async(PlayerModel.objects.get)(user=self.user, game=self.game)
+            seat_num = player.seat_number
 
-        current_time = time.time()
-        deadline_info = await get_player_turn_deadline(self.game.id, seat_num)
-        if not deadline_info or deadline_info['deadline'] < current_time:
-            await self.send(text_data=json.dumps({
-                'event': 'invalid_act', 'msg': 'Deadline passed'
-            }))
-            return
+            current_time = time.time()
+            deadline_info = await get_player_turn_deadline(self.game.id, seat_num)
+            if not deadline_info or deadline_info['deadline'] < current_time:
+                await self.send(text_data=json.dumps({
+                    'event': 'invalid_act', 'msg': 'Deadline passed'
+                }))
+                return
 
-        acted = await sync_to_async(self.game.perform_player_act)(
-            self.user, data.get('act'), data.get('amount')
-        )
-        if not acted:
-            await self.send(text_data=json.dumps({'event': 'invalid_act', 'msg': 'Illegal move'}))
-            return
+            acted = await sync_to_async(self.game.perform_player_act)(
+                self.user, data.get('act'), data.get('amount')
+            )
+            # Make clear_player_turn_deadline(self.game.id, seat_num) before perform_player_act so
+            # it prevent race conditions and then revert this if players act illegal
+            if not acted:
+                await self.send(text_data=json.dumps({'event': 'invalid_act', 'msg': 'Illegal move'}))
+                return
 
-        await clear_player_turn_deadline(self.game.id, seat_num)
-        if getattr(self, 'turn_timeout_task', None):
-            self.turn_timeout_task.cancel()
-            self.turn_timeout_task = None
+            await clear_player_turn_deadline(self.game.id, seat_num)
+            if getattr(self, 'turn_timeout_task', None):
+                self.turn_timeout_task.cancel()
+                self.turn_timeout_task = None
 
-        self.game = await sync_to_async(
-            lambda: GameModel.objects.select_related('current_turn').get(pk=self.game.pk)
-        )()
+            self.game = await sync_to_async(
+                lambda: GameModel.objects.get(pk=self.game.pk)
+            )()
 
-        await self.channel_layer.group_send(self.room_group_name, {
-            'type': 'player_acted',
-            'seat_num': seat_num,
-        })
+            await self.channel_layer.group_send(self.room_group_name, {
+                'type': 'player_acted',
+                'seat_num': seat_num,
+                'act': data.get('act'),
+                'amount': data.get('amount')
+            })
 
-        next_player = self.game.current_turn
-        if next_player:
-            next_channel = await get_player_channel(self.game.id, next_player.seat_number)
-            if next_channel:
-                await self.channel_layer.send(
-                    next_channel, {'type': 'player_to_act', 'seat_num': next_player.seat_number}
-                )
+            next_player = None
+            if await sync_to_async(self.game.perform_next_stage)():
+                # You need to send everyone new community cards if applicable
+                next_player = await sync_to_async(
+                    lambda: GameModel.objects.values_list(
+                        "current_turn", flat=True
+                    ).get(pk=self.game.pk)
+                )()
+            else:
+                next_player = await sync_to_async(self.game.perform_next_player_turn)()
+
+            if next_player:
+                seat_num = await sync_to_async(
+                    lambda: PlayerModel.objects.values_list(
+                        'seat_number', flat=True
+                    ).get(pk=next_player)
+                )()
+                next_channel = await get_player_channel(self.game.id, seat_num)
+                if next_channel:
+                    await self.channel_layer.send(
+                        next_channel, {'type': 'player_to_act', 'seat_num': seat_num}
+                    )
 
     async def _enforce_turn_timeout(self, seat_num):
         await asyncio.sleep(120)
