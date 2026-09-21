@@ -474,6 +474,24 @@ class GameModel(models.Model):
                 case _:
                     return False
 
+            return True
+
+    def perform_next_player_turn(self):
+        '''
+        Changes games current turn to the next player
+
+        Return:
+            -current_turn: The player whose turn it is now; None
+                if there was no initial current_turn set
+        '''
+        with transaction.atomic():
+            game = GameModel.objects.select_for_update().get(pk=self.pk)
+            player = PlayerModel.objects.select_for_update().get(pk=game.current_turn.pk,
+                game=game)
+            if not player:
+                # Change it so if no initial current_turn, you do big blind + 1?
+                return None
+            
             next_seat = player.seat_number
             for _ in range(6):
                 next_seat = game._seat_add_sub(next_seat, 1)
@@ -484,7 +502,7 @@ class GameModel(models.Model):
                     game.save(update_fields=['current_turn'])
                     break
 
-            return True
+            return game.current_turn
 
     def perform_next_stage(self):
         '''
