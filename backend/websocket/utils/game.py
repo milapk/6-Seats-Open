@@ -24,11 +24,12 @@ def get_user(token):
 def user_in_game(user):
     '''
     Return:
-        -game: Returns game object if user is in-game, else None
+        -game: The game object if user is in-game
+        -pk: The players primary key 
     '''
     player = PlayerModel.objects.get(user=user)
     if player.game:
-        return player.game
+        return player.game, player.pk
     return None
 
 
