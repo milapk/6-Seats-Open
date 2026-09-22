@@ -16,6 +16,7 @@ from .utils.redis_manager import (
     set_player_turn_deadline,
     get_player_turn_deadline,
     clear_player_turn_deadline,
+    claim_turn_timeout,
 )
 import time
 
@@ -24,7 +25,7 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.token = self.scope['url_route']['kwargs']['token']
         self.user = await get_user(self.token)
-        self.game = await user_in_game(self.user)
+        self.game, self.pk = await user_in_game(self.user)
         if self.user and self.game:
             self.room_group_name = f'poker_{self.game.id}'
             await self.accept()
@@ -43,9 +44,10 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
                     'type': 'game_started',
                     'user_id': self.user.id
                 })
-                await self.channel_layer.send(
-                    channel_name, {'type': 'player_to_act', 'seat_num': seat_num}
-                )
+                deadline = await set_player_turn_deadline(self.game.id, seat_num)
+                await self.channel_layer.group_send(self.room_group_name, {
+                    'type': 'player_to_act', 'seat_num': seat_num, 'deadline': deadline
+                })
         else:
             await self.close()
 
@@ -122,22 +124,22 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
                 )()
                 next_channel = await get_player_channel(self.game.id, seat_num)
                 if next_channel:
-                    await self.channel_layer.send(
-                        next_channel, {'type': 'player_to_act', 'seat_num': seat_num}
-                    )
+                    deadline = await set_player_turn_deadline(self.game.id, seat_num)
+                    await self.channel_layer.group_send(self.room_group_name, {
+                        'type': 'player_to_act', 'seat_num': seat_num, 'deadline': deadline
+                    })
 
-    async def _enforce_turn_timeout(self, seat_num):
-        await asyncio.sleep(120)
-        info = await get_player_turn_deadline(self.game.id, seat_num)
-        if info and not info['player_acted']:
-            await sync_to_async(
-                PlayerModel.objects.filter(game=self.game, seat_number=seat_num).update
-            )(is_folded=True)
-            await clear_player_turn_deadline(self.game.id, seat_num)
-            await self.channel_layer.group_send(self.room_group_name, {
-                'type': 'player_folded',
-                'seat_num': seat_num,
-            })
+    async def _enforce_turn_timeout(self, seat_num, deadline):
+        await asyncio.sleep(max(0, deadline - time.time()))
+        if not await claim_turn_timeout(self.game.id, seat_num):
+            return
+        await sync_to_async(
+            PlayerModel.objects.filter(game=self.game, seat_number=seat_num).update
+        )(is_folded=True)
+        await self.channel_layer.group_send(self.room_group_name, {
+            'type': 'player_folded',
+            'seat_num': seat_num,
+        })
 
     async def player_joined(self, event):
         game_info = await get_game_info(self.user)
@@ -160,14 +162,25 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
 
     async def player_to_act(self, event):
         seat_num = event['seat_num']
-        await set_player_turn_deadline(self.game.id, seat_num)
-        self.turn_timeout_task = asyncio.create_task(self._enforce_turn_timeout(seat_num))
-        await self.send(text_data=json.dumps({'event': 'Your turn to act'}))
+        deadline = event['deadline']
+        player_seat = await sync_to_async(
+            lambda: PlayerModel.objects.values_list(
+                "seat_number", flat=True
+            ).get(pk=self.pk)
+        )()
+        
+        self.turn_timeout_task = asyncio.create_task(
+            self._enforce_turn_timeout(seat_num, deadline)
+        )
+        event_name = 'you_to_act' if player_seat == seat_num else 'player_to_act'
+        await self.send(text_data=json.dumps({'event': event_name, 'deadline': deadline,
+            'seat_num': seat_num})
+        )
 
     async def player_acted(self, event):
         game_info = await get_game_info(self.user)
         await self.send(text_data=json.dumps(
-            {'event': 'player_acted', 'seat': event['seat_num'], 
+            {'event': 'player_acted', 'seat_num': event['seat_num'], 
             'act': event['act'], 'amount': event['amount'], 'data': game_info}
         ))
 

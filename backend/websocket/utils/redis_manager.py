@@ -85,6 +85,21 @@ async def get_player_turn_deadline(game_id, seat_num):
     }
 
 
+async def claim_turn_timeout(game_id, seat_num):
+    '''
+    Atomically claims the expired turn of a seat, so that exactly one of the
+    consumers racing to enforce the timeout acts on it
+
+    Return:
+        True if this caller removed the deadline key and therefore owns the
+        timeout, False if it was already gone (player acted, or another
+        consumer claimed it first)
+    '''
+    key = f'game#{game_id}:seat#{seat_num}:to.act'
+    r = await _get_redis()
+    return bool(await r.delete(key))
+
+
 async def clear_player_turn_deadline(game_id, seat_num):
     '''
     Marks the player as having acted, clearing their turn timer
