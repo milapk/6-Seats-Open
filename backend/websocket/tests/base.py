@@ -67,3 +67,35 @@ class PokerGameConsumerTestBase(TransactionTestCase):
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
         return communicator
+
+    async def _receive(self, communicator, event=None, timeout=5):
+        '''Receives one message, optionally asserting its event type. Returns the message.'''
+        res = await communicator.receive_json_from(timeout=timeout)
+        if event is not None:
+            self.assertEqual(res['event'], event)
+        print(res)
+        return res
+
+    async def _receive_all(self, communicators, event=None, timeout=5):
+        '''Receives one message from each communicator in order. Returns the list of messages.'''
+        return [await self._receive(c, event, timeout) for c in communicators]
+
+    async def _disconnect(self, *communicators):
+        for communicator in communicators:
+            await communicator.disconnect()
+
+    async def _start_heads_up(self):
+        '''Joins and connects both users, then consumes messages up to and including hole_cards.
+        Returns (player1, communicator1, communicator2).'''
+        player1, token1 = await self._sync_join(self.user1)
+        communicator1 = await self._connect(token1)
+        await self._receive(communicator1, 'game_joined')
+
+        _, token2 = await self._sync_join(self.user2)
+        communicator2 = await self._connect(token2)
+
+        await self._receive(communicator1, 'player_joined')
+        await self._receive(communicator2, 'game_joined')
+        await self._receive_all([communicator1, communicator2], 'game_started')
+        await self._receive_all([communicator1, communicator2], 'hole_cards')
+        return player1, communicator1, communicator2

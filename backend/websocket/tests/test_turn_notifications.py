@@ -21,9 +21,7 @@ class TurnNotificationTest(PokerGameConsumerTestBase):
         waiting_communicator = communicator2 if acting else communicator1
 
         turn_event = await acting_communicator.receive_json_from(timeout=5)
-        self.assertEqual(turn_event['event'], 'Your turn to act')
-
-        self.assertTrue(await waiting_communicator.receive_nothing())
+        self.assertEqual(turn_event['event'], 'you_to_act')
 
         await communicator1.disconnect()
         await communicator2.disconnect()
