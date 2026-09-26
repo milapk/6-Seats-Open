@@ -26,6 +26,7 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
         self.token = self.scope['url_route']['kwargs']['token']
         self.user = await get_user(self.token)
         self.game, self.pk = await user_in_game(self.user)
+        self.game_pk = self.game.pk
         if self.user and self.game:
             self.room_group_name = f'poker_{self.game.id}'
             await self.accept()
@@ -94,10 +95,6 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
                 self.turn_timeout_task.cancel()
                 self.turn_timeout_task = None
 
-            self.game = await sync_to_async(
-                lambda: GameModel.objects.get(pk=self.game.pk)
-            )()
-
             await self.channel_layer.group_send(self.room_group_name, {
                 'type': 'player_acted',
                 'seat_num': seat_num,
@@ -105,29 +102,7 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
                 'amount': data.get('amount')
             })
 
-            next_player = None
-            if await sync_to_async(self.game.perform_next_stage)():
-                # You need to send everyone new community cards if applicable
-                next_player = await sync_to_async(
-                    lambda: GameModel.objects.values_list(
-                        "current_turn", flat=True
-                    ).get(pk=self.game.pk)
-                )()
-            else:
-                next_player = await sync_to_async(self.game.perform_next_player_turn)()
-
-            if next_player:
-                seat_num = await sync_to_async(
-                    lambda: PlayerModel.objects.values_list(
-                        'seat_number', flat=True
-                    ).get(pk=next_player)
-                )()
-                next_channel = await get_player_channel(self.game.id, seat_num)
-                if next_channel:
-                    deadline = await set_player_turn_deadline(self.game.id, seat_num)
-                    await self.channel_layer.group_send(self.room_group_name, {
-                        'type': 'player_to_act', 'seat_num': seat_num, 'deadline': deadline
-                    })
+            await self._advance_turn()
 
     async def _enforce_turn_timeout(self, seat_num, deadline):
         await asyncio.sleep(max(0, deadline - time.time()))
@@ -140,6 +115,32 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
             'type': 'player_folded',
             'seat_num': seat_num,
         })
+        await self._advance_turn()
+
+    async def _advance_turn(self):
+        next_player = None
+        if await sync_to_async(self.game.perform_next_stage)():
+            # You need to send everyone new community cards if applicable
+            next_player = await sync_to_async(
+                lambda: GameModel.objects.values_list(
+                    "current_turn", flat=True
+                ).get(pk=self.game_pk)
+            )()
+        else:
+            next_player = await sync_to_async(self.game.perform_next_player_turn)()
+
+        if next_player:
+            seat_num = await sync_to_async(
+                lambda: PlayerModel.objects.values_list(
+                    'seat_number', flat=True
+                ).get(pk=next_player)
+            )()
+            next_channel = await get_player_channel(self.game.id, seat_num)
+            if next_channel:
+                deadline = await set_player_turn_deadline(self.game.id, seat_num)
+                await self.channel_layer.group_send(self.room_group_name, {
+                    'type': 'player_to_act', 'seat_num': seat_num, 'deadline': deadline
+                })
 
     async def player_joined(self, event):
         game_info = await get_game_info(self.user)
