@@ -405,7 +405,6 @@ class PerformPlayerActFoldTest(PerformPlayerActTestCase):
         self._refresh()
         self.assertTrue(self.p1.is_folded)
         self.assertTrue(self.p1.had_acted)
-        self.assertEqual(self.game.current_turn_id, self.p2.id)
 
 
 class PerformPlayerActBetTest(PerformPlayerActTestCase):
@@ -421,7 +420,6 @@ class PerformPlayerActBetTest(PerformPlayerActTestCase):
         self.assertFalse(self.p1.all_in)
         self.assertEqual(self.pot.pot_money, 50)
         self.assertIn(self.p1, self.pot.players.all())
-        self.assertEqual(self.game.current_turn_id, self.p2.id)
 
     def test_bet_exceeding_chips_in_play_is_rejected(self):
         result = self.game.perform_player_act(self.p1.user, 'bet', amount=150)
@@ -429,7 +427,6 @@ class PerformPlayerActBetTest(PerformPlayerActTestCase):
         self.assertFalse(result)
         self._refresh()
         self.assertEqual(self.p1.chips_in_play, 100)
-        self.assertEqual(self.game.current_turn_id, self.p1.id)
 
     def test_zero_or_negative_bet_is_rejected(self):
         self.assertFalse(self.game.perform_player_act(self.p1.user, 'bet', amount=0))
@@ -447,6 +444,7 @@ class PerformPlayerActBetTest(PerformPlayerActTestCase):
 class PerformPlayerActCallTest(PerformPlayerActTestCase):
     def test_call_matching_highest_bet_succeeds(self):
         self.game.perform_player_act(self.p1.user, 'bet', amount=50)
+        self.game.perform_next_player_turn()
 
         result = self.game.perform_player_act(self.p2.user, 'call', amount=50)
 
@@ -460,6 +458,7 @@ class PerformPlayerActCallTest(PerformPlayerActTestCase):
 
     def test_call_with_wrong_amount_is_rejected(self):
         self.game.perform_player_act(self.p1.user, 'bet', amount=50)
+        self.game.perform_next_player_turn()
 
         result = self.game.perform_player_act(self.p2.user, 'call', amount=40)
 
@@ -469,6 +468,7 @@ class PerformPlayerActCallTest(PerformPlayerActTestCase):
 
     def test_call_exceeding_chips_in_play_is_rejected(self):
         self.game.perform_player_act(self.p1.user, 'bet', amount=50)
+        self.game.perform_next_player_turn()
 
         result = self.game.perform_player_act(self.p2.user, 'call', amount=150)
 
@@ -478,6 +478,7 @@ class PerformPlayerActCallTest(PerformPlayerActTestCase):
         self.game.perform_player_act(self.p1.user, 'bet', amount=100)  # p1 all-in
         self.p2.chips_in_play = 30
         self.p2.save(update_fields=['chips_in_play'])
+        self.game.perform_next_player_turn()
 
         result = self.game.perform_player_act(self.p2.user, 'call', amount=30)
 
@@ -496,10 +497,10 @@ class PerformPlayerActCheckTest(PerformPlayerActTestCase):
         self._refresh()
         self.assertTrue(self.p1.had_acted)
         self.assertEqual(self.p1.current_bet, 0)
-        self.assertEqual(self.game.current_turn_id, self.p2.id)
 
     def test_check_rejected_when_facing_a_bet(self):
         self.game.perform_player_act(self.p1.user, 'bet', amount=50)
+        self.game.perform_next_player_turn()
 
         result = self.game.perform_player_act(self.p2.user, 'check')
 
@@ -530,7 +531,10 @@ class PerformPlayerActTurnAdvanceTest(PerformPlayerActTestCase):
 
     def test_current_turn_left_stale_when_no_one_left_to_act(self):
         self.game.perform_player_act(self.p1.user, 'fold')
+        self.game.perform_next_player_turn()
+
         self.game.perform_player_act(self.p2.user, 'fold')
+        self.game.perform_next_player_turn()
 
         self.game.perform_player_act(self.p3.user, 'fold')
 
@@ -725,3 +729,62 @@ class CalculateSidePotsTest(GameModelHelpersTestCase):
 
         self.assertEqual(pots, [])
         self.assertEqual(PotModel.objects.filter(game=self.game).count(), 0)
+
+
+class PerformPlayerActRaiseTest(PerformPlayerActTestCase):
+    def _open_with_bet(self, amount):
+        self.game.perform_player_act(self.p1.user, 'bet', amount=amount)
+        self.game.perform_next_player_turn()
+
+    def test_missing_or_invalid_amount_is_rejected(self):
+        self._open_with_bet(50)
+        self.assertFalse(self.game.perform_player_act(self.p2.user, 'raise'))
+        self.assertFalse(self.game.perform_player_act(self.p2.user, 'raise', amount=0))
+        self.assertFalse(self.game.perform_player_act(self.p2.user, 'raise', amount=-5))
+        self.assertFalse(self.game.perform_player_act(self.p2.user, 'raise', amount=500))
+
+    def test_raise_without_existing_bet_is_rejected(self):
+        self.assertFalse(self.game.perform_player_act(self.p1.user, 'raise', amount=50))
+
+    def test_raise_not_above_highest_bet_is_rejected(self):
+        self._open_with_bet(50)
+        self.assertFalse(self.game.perform_player_act(self.p2.user, 'raise', amount=50))
+
+    def test_raise_below_minimum_is_rejected(self):
+        self._open_with_bet(50)
+        min_total = 50 + max(50, self.table_type.big_blind)
+        self.assertFalse(
+            self.game.perform_player_act(self.p2.user, 'raise', amount=min_total - 1))
+
+    def test_valid_raise_updates_state_and_reopens_action(self):
+        self._open_with_bet(50)
+        self.p3.had_acted = True
+        self.p3.save(update_fields=['had_acted'])
+
+        result = self.game.perform_player_act(self.p2.user, 'raise', amount=100)
+
+        self.assertTrue(result)
+        self._refresh()
+        self.assertEqual(self.p2.street_bet, 100)
+        self.assertEqual(self.p2.chips_in_play, 0)
+        self.assertTrue(self.p2.all_in)
+        self.assertEqual(self.pot.pot_money, 150)
+        self.assertEqual(self.game.last_raise_size, 50)
+        self.assertFalse(self.p1.had_acted)
+        self.assertFalse(self.p3.had_acted)
+        self.assertTrue(self.p2.had_acted)
+
+    def test_short_all_in_is_allowed_but_does_not_reopen_action(self):
+        self._open_with_bet(50)
+        self.p2.chips_in_play = 20  # 20 < 50 needed to call/raise, only a partial raise
+        self.p2.save(update_fields=['chips_in_play'])
+        self.p2.street_bet = 40
+        self.p2.save(update_fields=['street_bet'])
+
+        result = self.game.perform_player_act(self.p2.user, 'raise', amount=20)
+
+        self.assertTrue(result)
+        self._refresh()
+        self.assertTrue(self.p2.all_in)
+        self.assertEqual(self.game.last_raise_size, 50)
+        self.assertTrue(self.p1.had_acted)
