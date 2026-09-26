@@ -45,6 +45,9 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
                     'type': 'game_started',
                     'user_id': self.user.id
                 })
+                await self.channel_layer.group_send(self.room_group_name, {
+                    'type': 'send_hole_cards'
+                })
                 deadline = await set_player_turn_deadline(self.game.id, seat_num)
                 await self.channel_layer.group_send(self.room_group_name, {
                     'type': 'player_to_act', 'seat_num': seat_num, 'deadline': deadline
@@ -119,8 +122,11 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
 
     async def _advance_turn(self):
         next_player = None
-        if await sync_to_async(self.game.perform_next_stage)():
-            # You need to send everyone new community cards if applicable
+        progressed, stage = await sync_to_async(self.game.perform_next_stage)()
+        if progressed:
+            await self.channel_layer.group_send(self.room_group_name, {
+                'type': 'send_community_cards', 'stage': stage
+            })
             next_player = await sync_to_async(
                 lambda: GameModel.objects.values_list(
                     "current_turn", flat=True
@@ -191,5 +197,18 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
             {'event': 'player_folded', 'seat_num': event['seat_num'], 'data': game_info}
         ))
 
-    async def send_cards(self, event):
-        await self.send(text_data=json.dumps({}))
+    async def send_hole_cards(self, event):
+        cards = await sync_to_async(
+            lambda: PlayerModel.objects.values_list('cards', flat=True).get(pk=self.pk)
+        )()
+        hole_cards = cards.split(',') if cards else []
+        await self.send(text_data=json.dumps({'event': 'hole_cards', 'cards': hole_cards}))
+
+    async def send_community_cards(self, event):
+        cards = await sync_to_async(
+            lambda: GameModel.objects.values_list('community_cards', flat=True).get(pk=self.game_pk)
+        )()
+        community_cards = cards.split(',') if cards else []
+        await self.send(text_data=json.dumps({
+            'event': 'community_cards', 'stage': event['stage'], 'cards': community_cards
+        }))
