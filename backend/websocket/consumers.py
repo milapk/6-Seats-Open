@@ -136,10 +136,11 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
             next_player = await sync_to_async(self.game.perform_next_player_turn)()
 
         if next_player:
+            next_player_pk = getattr(next_player, 'pk', next_player)
             seat_num = await sync_to_async(
                 lambda: PlayerModel.objects.values_list(
                     'seat_number', flat=True
-                ).get(pk=next_player)
+                ).get(pk=next_player_pk)
             )()
             next_channel = await get_player_channel(self.game.id, seat_num)
             if next_channel:
