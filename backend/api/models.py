@@ -99,6 +99,7 @@ class GameModel(models.Model):
     open_seats = models.CharField(default='123456', null=True)
     cards = models.CharField(max_length=157, null=True)
     game_started = models.BooleanField(default=False)
+    last_raise_size = models.PositiveIntegerField(default=0)
 
     def _seat_add_sub(self, seat, num) -> int:
         """
@@ -340,6 +341,7 @@ class GameModel(models.Model):
 
             pot = PotModel.objects.create(game=game, pot_money=0)
             game.betting_stage = 0
+            game.last_raise_size = 0
             game.game_started = True
 
             game.dealer_position = game._get_next_taken_seat(game.dealer_position)
@@ -389,15 +391,42 @@ class GameModel(models.Model):
 
         return True if player == game.current_turn else False
 
+    def _commit_chips(self, game, player, amount):
+        '''
+        Moves chips from the player's stack into the main pot and updates their bet tracking.
+        Must be called inside a transaction with game and player already locked.
+
+        Arguments:
+            -game: locked GameModel the player is in.
+            -player: locked PlayerModel committing the chips.
+            -amount: chips being added this action.
+        '''
+        pot = PotModel.objects.select_for_update().get(game=game, cap__isnull=True)
+        pot.players.add(player)
+        pot.add_chips(amount)
+
+        if amount == player.chips_in_play:
+            player.all_in = True
+
+        player.current_bet = amount
+        player.street_bet += amount
+        player.total_bet += amount
+        player.chips_in_play -= amount
+        player.had_acted = True
+
+        player.save(update_fields=[
+            'current_bet', 'street_bet', 'total_bet', 'chips_in_play',
+            'had_acted', 'all_in'])
+
     def perform_player_act(self, user, action, amount=None):
         '''
-        Applies the acting player's action, then advances the current turn to
-        the next player still in the hand.
+        Applies the acting player's action.
 
         Arguments:
             -user: CustomUser of the player performing the action.
-            -action: one of 'fold', 'bet' or 'check'.
-            -amount: chips being added to the pot this action (required for 'bet').
+            -action: one of 'fold', 'bet', 'raise', 'call' or 'check'.
+            -amount: chips being added to the pot this action (required for 'bet', 'raise'
+                and 'call').
 
         Return:
             -boolean: True if the action was legal and applied, else False.
@@ -422,22 +451,32 @@ class GameModel(models.Model):
                     if not amount or amount <= 0 or amount > player.chips_in_play:
                         return False
 
-                    pot = PotModel.objects.select_for_update().get(game=game, cap__isnull=True)
-                    pot.players.add(player)
-                    pot.add_chips(amount)
+                    self._commit_chips(game, player, amount)
+                    game.last_raise_size = player.street_bet
+                    game.save(update_fields=['last_raise_size'])
+                case 'raise':
+                    if not amount or amount <= 0 or amount > player.chips_in_play:
+                        return False
 
-                    if amount == player.chips_in_play:
-                        player.all_in = True
+                    new_street_bet = player.street_bet + amount
+                    if highest_bet == 0 or new_street_bet <= highest_bet:
+                        return False
 
-                    player.current_bet = amount
-                    player.street_bet += amount
-                    player.total_bet += amount
-                    player.chips_in_play -= amount
-                    player.had_acted = True
+                    last_raise = max(game.last_raise_size, game.table_type.big_blind)
+                    is_full_raise = new_street_bet >= highest_bet + last_raise
+                    if not is_full_raise and amount != player.chips_in_play:
+                        return False
 
-                    player.save(update_fields=[
-                        'current_bet', 'street_bet', 'total_bet', 'chips_in_play',
-                        'had_acted', 'all_in'])
+                    self._commit_chips(game, player, amount)
+
+                    # A short all-in doesn't count as a full raise, so it neither changes
+                    # the minimum raise nor reopens the action.
+                    if is_full_raise:
+                        game.last_raise_size = new_street_bet - highest_bet
+                        game.save(update_fields=['last_raise_size'])
+                        PlayerModel.objects.filter(
+                            game=game, is_folded=False, all_in=False).exclude(
+                                pk=player.pk).update(had_acted=False)
                 case 'call':
                     if not amount or amount <= 0 or amount > player.chips_in_play:
                         return False
@@ -449,22 +488,7 @@ class GameModel(models.Model):
                                 amount == player.chips_in_play):
                             return False
 
-                    pot = PotModel.objects.select_for_update().get(game=game, cap__isnull=True)
-                    pot.players.add(player)
-                    pot.add_chips(amount)
-
-                    if amount == player.chips_in_play:
-                        player.all_in = True
-
-                    player.current_bet = amount
-                    player.street_bet += amount
-                    player.total_bet += amount
-                    player.chips_in_play -= amount
-                    player.had_acted = True
-
-                    player.save(update_fields=[
-                        'current_bet', 'street_bet', 'total_bet', 'chips_in_play',
-                        'had_acted', 'all_in'])
+                    self._commit_chips(game, player, amount)
                 case 'check':
                     if player.had_acted or player.street_bet < highest_bet:
                         return False
@@ -560,7 +584,9 @@ class GameModel(models.Model):
                         break
                 game.current_turn = next_player
 
-            game.save(update_fields=['betting_stage', 'community_cards', 'cards', 'current_turn'])
+            game.last_raise_size = 0
+            game.save(update_fields=[
+                'betting_stage', 'community_cards', 'cards', 'current_turn', 'last_raise_size'])
 
             self.__dict__.update(game.__dict__)
             return True, game.get_betting_stage_display()
