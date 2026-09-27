@@ -8,6 +8,7 @@ backend/api/__pycache__
 backend/core/__pycache__
 backend/websocket/__pycache__
 backend/websocket/utils/__pycache__
+backend/websocket/tests/__pycache__/
 backend/api/tests/__pycache__
 backend/api/migrations/__pycache__
 backend/.pytest_cache
