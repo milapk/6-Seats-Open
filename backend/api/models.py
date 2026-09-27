@@ -257,7 +257,11 @@ class GameModel(models.Model):
                     'username': seat_player.user.username,
                     'chips': seat_player.chips_in_play,
                     'id': seat_player.id,
-                    'actual_seat': seat
+                    'actual_seat': seat,
+                    'street_bet': seat_player.street_bet,
+                    'total_bet': seat_player.total_bet,
+                    'all_in': seat_player.all_in,
+                    'is_folded': seat_player.is_folded
                 }
             else:
                 player_info[i + 1] = None
