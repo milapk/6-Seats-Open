@@ -72,6 +72,11 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
                 await self.send(text_data=json.dumps({'event': 'invalid_act', 'msg': 'Not your turn'}))
                 return
 
+            if not isinstance(data.get('amount'), int):
+                await self.send(text_data=json.dumps({'event': 'invalid_act', 
+                    'msg': 'Amount must be an integer'}))
+                return
+
             player = await sync_to_async(PlayerModel.objects.get)(user=self.user, game=self.game)
             seat_num = player.seat_number
 
