@@ -15,7 +15,6 @@ from .utils.redis_manager import (
     get_player_channel,
     set_player_turn_deadline,
     get_player_turn_deadline,
-    clear_player_turn_deadline,
     claim_turn_timeout,
 )
 import time
@@ -93,7 +92,7 @@ class PokerGameConsumer(AsyncWebsocketConsumer):
                 await self.send(text_data=json.dumps({'event': 'invalid_act', 'msg': 'Illegal move'}))
                 return
 
-            await clear_player_turn_deadline(self.game.id, seat_num)
+            await claim_turn_timeout(self.game.id, seat_num)
             if getattr(self, 'turn_timeout_task', None):
                 self.turn_timeout_task.cancel()
                 self.turn_timeout_task = None

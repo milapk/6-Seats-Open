@@ -98,12 +98,3 @@ async def claim_turn_timeout(game_id, seat_num):
     key = f'game#{game_id}:seat#{seat_num}:to.act'
     r = await _get_redis()
     return bool(await r.delete(key))
-
-
-async def clear_player_turn_deadline(game_id, seat_num):
-    '''
-    Marks the player as having acted, clearing their turn timer
-    '''
-    key = f'game#{game_id}:seat#{seat_num}:to.act'
-    r = await _get_redis()
-    return await r.delete(key)
